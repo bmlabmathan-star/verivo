@@ -1,4 +1,5 @@
-import { getExpertById, getPredictions } from "@/lib/actions/experts"
+import { getExpertById } from "@/lib/actions/experts"
+import { getPredictions } from "@/lib/actions/predictions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PredictionCard } from "@/components/prediction-card"
 import { notFound } from "next/navigation"

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { getCurrentExpert, getPredictions } from "@/lib/actions/experts"
+import { getCurrentExpert } from "@/lib/actions/experts"
+import { getPredictions } from "@/lib/actions/predictions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
