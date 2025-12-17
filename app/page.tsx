@@ -118,7 +118,7 @@ export default function Home() {
               <div className="text-4xl mb-4">🔒</div>
               <h3 className="font-semibold text-lg mb-2">What Locking Means</h3>
               <p className="text-sm text-muted-foreground">
-                When an expert makes a prediction, it's immediately locked and cannot be changed. This ensures transparency and prevents experts from editing their predictions after seeing market movements.
+                When an expert makes a prediction, it&apos;s immediately locked and cannot be changed. This ensures transparency and prevents experts from editing their predictions after seeing market movements.
               </p>
             </div>
             <div className="p-6 bg-gradient-to-br from-gray-50 to-white rounded-lg border">
