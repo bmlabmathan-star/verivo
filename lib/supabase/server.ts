@@ -4,6 +4,10 @@ import { cookies } from 'next/headers'
 export async function createClient() {
   const cookieStore = await cookies()
 
+  console.log('Build Debug: Supabase URL exists?', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
+  console.log('Build Debug: Supabase Anon Key exists?', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
