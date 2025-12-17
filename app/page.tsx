@@ -24,7 +24,7 @@ export default function Home() {
             </Button>
           </Link>
           <Link href="/feed">
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+            <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100 border-2 border-white">
               Follow Predictions
             </Button>
           </Link>

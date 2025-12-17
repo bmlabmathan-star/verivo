@@ -47,7 +47,7 @@ export function Navbar() {
           <span className="text-2xl">📊</span>
           <div className="flex flex-col">
             <span className="text-xl font-bold text-purple-600">Verivo</span>
-            <span className="text-xs text-gray-500 -mt-1">Prediction Credibility Platform</span>
+            <span className="text-xs text-gray-500 -mt-1">Trust the data, not the hype.</span>
           </div>
         </Link>
 
