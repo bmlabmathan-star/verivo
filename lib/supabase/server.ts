@@ -4,13 +4,16 @@ import { cookies } from 'next/headers'
 export async function createClient() {
   const cookieStore = await cookies()
 
-  console.log('Build Debug: Supabase URL exists?', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
-  console.log('Build Debug: Supabase Anon Key exists?', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL! || 'https://placeholder.supabase.co'
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! || 'placeholder-key'
 
+  /*
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) console.warn('Usage of fallback Supabase URL')
+  */
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
