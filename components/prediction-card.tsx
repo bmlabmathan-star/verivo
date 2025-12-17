@@ -78,7 +78,7 @@ export function PredictionCard({ prediction, showFull = false }: PredictionCardP
               {isLocked && (
                 <span className="badge badge-warning">🔒 Locked</span>
               )}
-              {!isLocked && validation?.is_correct !== null && (
+              {!isLocked && validation && validation.is_correct !== null && (
                 <span className={`badge ${validation.is_correct ? 'badge-success' : 'badge-danger'}`}>
                   {validation.is_correct ? '✓ Correct' : '✗ Incorrect'}
                 </span>
@@ -86,7 +86,7 @@ export function PredictionCard({ prediction, showFull = false }: PredictionCardP
             </div>
           </div>
           {prediction.experts && (
-            <Link 
+            <Link
               href={`/experts/${prediction.expert_id}`}
               className="text-sm text-purple-600 hover:underline"
             >
@@ -144,7 +144,7 @@ export function PredictionCard({ prediction, showFull = false }: PredictionCardP
                   <div className="text-sm">{prediction.current_value}</div>
                 </div>
               )}
-              {validation?.actual_value !== null && (
+              {validation && validation.actual_value !== null && (
                 <div>
                   <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Actual</div>
                   <div className="text-sm">{validation.actual_value}</div>
