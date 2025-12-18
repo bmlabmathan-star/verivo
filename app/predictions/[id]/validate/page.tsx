@@ -176,8 +176,8 @@ export default function ValidatePredictionPage() {
                     type="button"
                     onClick={() => setFormData({ ...formData, is_correct: true })}
                     className={`h-20 rounded-2xl border-2 flex items-center justify-center gap-3 transition-all ${formData.is_correct === true
-                        ? 'bg-green-500/10 border-green-500 text-green-500 shadow-lg shadow-green-500/20'
-                        : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:border-white/10'
+                      ? 'bg-green-500/10 border-green-500 text-green-500 shadow-lg shadow-green-500/20'
+                      : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:border-white/10'
                       }`}
                   >
                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${formData.is_correct === true ? 'border-green-500' : 'border-white/20'}`}>
@@ -189,8 +189,8 @@ export default function ValidatePredictionPage() {
                     type="button"
                     onClick={() => setFormData({ ...formData, is_correct: false })}
                     className={`h-20 rounded-2xl border-2 flex items-center justify-center gap-3 transition-all ${formData.is_correct === false
-                        ? 'bg-red-500/10 border-red-500 text-red-500 shadow-lg shadow-red-500/20'
-                        : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:border-white/10'
+                      ? 'bg-red-500/10 border-red-500 text-red-500 shadow-lg shadow-red-500/20'
+                      : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:border-white/10'
                       }`}
                   >
                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${formData.is_correct === false ? 'border-red-500' : 'border-white/20'}`}>
@@ -221,10 +221,7 @@ export default function ValidatePredictionPage() {
             </div>
           )}
         </CardContent>
-      </Card>
+      </div>
     </div>
   )
 }
-
-
-
