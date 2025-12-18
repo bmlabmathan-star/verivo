@@ -12,18 +12,18 @@ export default function Home() {
         </h1>
         <div className="relative inline-block">
           <p className="text-2xl md:text-4xl font-bold text-white mb-4 drop-shadow-md">
-            The Gold Standard of <span className="gradient-text">Expert Predictions</span>
+            A Transparent Protocol for <span className="gradient-text">Predictive Credibility</span>
           </p>
           <div className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent"></div>
         </div>
         <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed glass-card p-6 rounded-2xl border-white/20">
-          Connect with verified experts who provide locked predictions on equity, commodity, currency, and crypto markets.
-          All predictions are validated after events close, ensuring total transparency.
+          Join a platform where contributors build credibility through transparent, locked predictions across finance, sports, and public events.
+          All predictions are validated after events conclude, supporting record-based accountability.
         </p>
         <div className="flex gap-6 justify-center flex-wrap">
           <Link href="/register">
             <Button size="lg" className="bg-white text-purple-700 hover:bg-white/90 hover:scale-105 transition-all duration-300 font-bold px-10 py-8 text-xl rounded-full shadow-[0_0_30px_rgba(255,255,255,0.3)]">
-              Start Predicting
+              Start Contributing
             </Button>
           </Link>
           <Link href="/feed">
@@ -38,9 +38,9 @@ export default function Home() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto mb-24">
         {[
           { icon: "🔒", title: "Locked", desc: "Predictions are secured before events and revealed only after closure." },
-          { icon: "✅", title: "Verified", desc: "Automated validation against real-time market data ensures accuracy." },
-          { icon: "⭐", title: "Reputation", desc: "Experts earn scores based on long-term performance and accuracy." },
-          { icon: "📈", title: "Multi-Market", desc: "Broad coverage across Equity, Crypto, Commodities, and Forex." },
+          { icon: "✅", title: "Verified", desc: "System-driven verification against primary data sources promotes consistency." },
+          { icon: "⭐", title: "Credibility", desc: "Contributors earn scores based on historical performance and accuracy over time." },
+          { icon: "🌍", title: "Multi-Domain", desc: "Broad coverage across finance, global events, and emerging trends." },
         ].map((f, i) => (
           <Card key={i} className="glass-card card-hover border-white/10 group">
             <CardHeader className="text-center">
@@ -61,10 +61,10 @@ export default function Home() {
         <h2 className="text-4xl font-bold text-center text-white mb-12 drop-shadow-md">How Verivo Works</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {[
-            { num: "1", title: "Expert Registration", desc: "Experts register and verify their credentials" },
-            { num: "2", title: "Submit Predictions", desc: "Locked predictions ensure total data integrity" },
-            { num: "3", title: "Event Closure", desc: "Results are benchmarked against live data" },
-            { num: "4", title: "Validation & Rating", desc: "Trust scores update based on performance" },
+            { num: "1", title: "Community Onboarding", desc: "Anyone can join and start building their predictive track record." },
+            { num: "2", title: "Submit Predictions", desc: "Locked records support verifiable data consistency." },
+            { num: "3", title: "Event Closure", desc: "Outcomes are measured against documented datasets." },
+            { num: "4", title: "Validation & Tracking", desc: "Reliability indicators evolve as more data points are validated." },
           ].map((step) => (
             <div key={step.num} className="glass-card p-8 rounded-3xl text-center hover-glow transition-all duration-300">
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-white to-purple-200 text-purple-700 flex items-center justify-center text-3xl font-black mx-auto mb-6 shadow-xl">
@@ -84,24 +84,34 @@ export default function Home() {
             <div className="text-5xl mb-6">🔒</div>
             <h3 className="font-black text-white text-2xl mb-4">Unalterable Data</h3>
             <p className="text-white/80 text-lg leading-relaxed">
-              Once an expert commits, it&apos;s etched in the blockchain (metaphorically). No edits, no hacks, just pure prediction power.
+              Once a contributor commits, it&apos;s etched in the platform records. No retrospective edits, emphasizing commitment to authentic data integrity.
             </p>
           </div>
           <div className="glass-card p-10 rounded-3xl border-l-8 border-pink-400">
             <div className="text-5xl mb-6">🔓</div>
-            <h3 className="font-black text-white text-2xl mb-4">Total Transparency</h3>
+            <h3 className="font-black text-white text-2xl mb-4">Accountable Disclosure</h3>
             <p className="text-white/80 text-lg leading-relaxed">
-              Every result is public. We reveal the truth after the market closes, bridging the gap between talk and walk.
+              Every outcome is public. We disclose validated data once events conclude, bridging the gap between talk and walk.
             </p>
           </div>
           <div className="glass-card p-10 rounded-3xl border-l-8 border-cyan-400">
             <div className="text-5xl mb-6">📊</div>
             <h3 className="font-black text-white text-2xl mb-4">Smart Metrics</h3>
             <p className="text-white/80 text-lg leading-relaxed">
-              Our Verivo Score is the industry benchmark for expert reliability. We track everything so you don&apos;t have to.
+              Our Verivo Score is a calculated framework for assessing predictive consistency. We track performance so you don&apos;t have to.
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Disclaimer Section */}
+      <div className="max-w-4xl mx-auto text-center mb-12">
+        <p className="text-white/40 text-sm leading-relaxed glass-card p-6 rounded-2xl border-white/5">
+          <span className="font-bold block mb-2 text-white/60 uppercase tracking-widest text-xs">Disclaimer</span>
+          Verivo is a platform for tracking prediction credibility and does not provide financial advice. 
+          We do not guarantee outcomes or specific results. Our mission is to promote transparency 
+          and accountability through verifiable, historical data.
+        </p>
       </div>
     </div>
   )
