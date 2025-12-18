@@ -6,138 +6,103 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-4 py-20">
       {/* Hero Section */}
-      <div className="text-center max-w-4xl mx-auto mb-16">
-        <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">
-          Welcome to Verivo
+      <div className="text-center max-w-4xl mx-auto mb-16 space-y-8">
+        <h1 className="text-6xl md:text-8xl font-black text-white mb-6 drop-shadow-2xl tracking-tighter animate-in fade-in slide-in-from-top-10 duration-1000">
+          VERIVO
         </h1>
-        <p className="text-xl md:text-2xl text-white/90 mb-4">
-          Verified Expert Predictions Platform
-        </p>
-        <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto">
+        <div className="relative inline-block">
+          <p className="text-2xl md:text-4xl font-bold text-white mb-4 drop-shadow-md">
+            The Gold Standard of <span className="gradient-text">Expert Predictions</span>
+          </p>
+          <div className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent"></div>
+        </div>
+        <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed glass-card p-6 rounded-2xl border-white/20">
           Connect with verified experts who provide locked predictions on equity, commodity, currency, and crypto markets.
-          All predictions are validated after events close, helping you identify real experts.
+          All predictions are validated after events close, ensuring total transparency.
         </p>
-        <div className="flex gap-4 justify-center flex-wrap">
+        <div className="flex gap-6 justify-center flex-wrap">
           <Link href="/register">
-            <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100">
-              Make Predictions
+            <Button size="lg" className="bg-white text-purple-700 hover:bg-white/90 hover:scale-105 transition-all duration-300 font-bold px-10 py-8 text-xl rounded-full shadow-[0_0_30px_rgba(255,255,255,0.3)]">
+              Start Predicting
             </Button>
           </Link>
           <Link href="/feed">
-            <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100 border-2 border-white">
-              Follow Predictions
+            <Button size="lg" variant="outline" className="bg-transparent text-white border-2 border-white/50 hover:bg-white/10 hover:border-white hover:scale-105 transition-all duration-300 font-bold px-10 py-8 text-xl rounded-full backdrop-blur-md">
+              Live Feed
             </Button>
           </Link>
         </div>
       </div>
 
       {/* Features */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-16">
-        <Card className="card-hover">
-          <CardHeader>
-            <div className="text-4xl mb-4">🔒</div>
-            <CardTitle>Locked Predictions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Expert predictions are locked before events and revealed only after validation
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="card-hover">
-          <CardHeader>
-            <div className="text-4xl mb-4">✅</div>
-            <CardTitle>Verified Results</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              All predictions are validated against actual market outcomes
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="card-hover">
-          <CardHeader>
-            <div className="text-4xl mb-4">⭐</div>
-            <CardTitle>Expert Ratings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Experts are rated based on their prediction accuracy and performance
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="card-hover">
-          <CardHeader>
-            <div className="text-4xl mb-4">📈</div>
-            <CardTitle>Multiple Markets</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Coverage across equity, commodity, currency, and cryptocurrency markets
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto mb-24">
+        {[
+          { icon: "🔒", title: "Locked", desc: "Predictions are secured before events and revealed only after closure." },
+          { icon: "✅", title: "Verified", desc: "Automated validation against real-time market data ensures accuracy." },
+          { icon: "⭐", title: "Reputation", desc: "Experts earn scores based on long-term performance and accuracy." },
+          { icon: "📈", title: "Multi-Market", desc: "Broad coverage across Equity, Crypto, Commodities, and Forex." },
+        ].map((f, i) => (
+          <Card key={i} className="glass-card card-hover border-white/10 group">
+            <CardHeader className="text-center">
+              <div className="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">{f.icon}</div>
+              <CardTitle className="text-white text-2xl font-bold">{f.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-white/80 text-center text-lg leading-snug">
+                {f.desc}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* How It Works */}
-      <Card className="max-w-4xl mx-auto mb-16">
-        <CardHeader>
-          <CardTitle className="text-3xl text-center">How Verivo Works</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {[
-              { num: "1", title: "Expert Registration", desc: "Experts register and create their profile" },
-              { num: "2", title: "Submit Predictions", desc: "Experts submit predictions which are immediately locked" },
-              { num: "3", title: "Event Closure", desc: "After the event closes, actual results are recorded" },
-              { num: "4", title: "Validation & Rating", desc: "Predictions are validated and expert ratings are updated" },
-            ].map((step) => (
-              <div key={step.num} className="text-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                  {step.num}
-                </div>
-                <h3 className="font-semibold mb-2">{step.title}</h3>
-                <p className="text-sm text-muted-foreground">{step.desc}</p>
+      <div className="max-w-6xl mx-auto mb-24 w-full">
+        <h2 className="text-4xl font-bold text-center text-white mb-12 drop-shadow-md">How Verivo Works</h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {[
+            { num: "1", title: "Expert Registration", desc: "Experts register and verify their credentials" },
+            { num: "2", title: "Submit Predictions", desc: "Locked predictions ensure total data integrity" },
+            { num: "3", title: "Event Closure", desc: "Results are benchmarked against live data" },
+            { num: "4", title: "Validation & Rating", desc: "Trust scores update based on performance" },
+          ].map((step) => (
+            <div key={step.num} className="glass-card p-8 rounded-3xl text-center hover-glow transition-all duration-300">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-white to-purple-200 text-purple-700 flex items-center justify-center text-3xl font-black mx-auto mb-6 shadow-xl">
+                {step.num}
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              <h3 className="font-bold text-white text-xl mb-4">{step.title}</h3>
+              <p className="text-white/70 leading-relaxed">{step.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Explanation Section */}
-      <Card className="max-w-6xl mx-auto">
-        <CardHeader>
-          <CardTitle className="text-3xl text-center">Understanding Verivo</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 bg-gradient-to-br from-gray-50 to-white rounded-lg border">
-              <div className="text-4xl mb-4">🔒</div>
-              <h3 className="font-semibold text-lg mb-2">What Locking Means</h3>
-              <p className="text-sm text-muted-foreground">
-                When an expert makes a prediction, it&apos;s immediately locked and cannot be changed. This ensures transparency and prevents experts from editing their predictions after seeing market movements.
-              </p>
-            </div>
-            <div className="p-6 bg-gradient-to-br from-gray-50 to-white rounded-lg border">
-              <div className="text-4xl mb-4">🔓</div>
-              <h3 className="font-semibold text-lg mb-2">What Reveal Means</h3>
-              <p className="text-sm text-muted-foreground">
-                After the event closes, predictions are revealed and validated against actual market outcomes. This process is transparent and automated, ensuring that expert performance is accurately tracked.
-              </p>
-            </div>
-            <div className="p-6 bg-gradient-to-br from-gray-50 to-white rounded-lg border">
-              <div className="text-4xl mb-4">📊</div>
-              <h3 className="font-semibold text-lg mb-2">Why Accuracy Matters</h3>
-              <p className="text-sm text-muted-foreground">
-                Accuracy is the foundation of trust. Verivo tracks every prediction and calculates expert accuracy rates. This helps you identify truly skilled experts who consistently make correct predictions.
-              </p>
-            </div>
+      <div className="max-w-7xl mx-auto mb-20 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="glass-card p-10 rounded-3xl border-l-8 border-purple-400">
+            <div className="text-5xl mb-6">🔒</div>
+            <h3 className="font-black text-white text-2xl mb-4">Unalterable Data</h3>
+            <p className="text-white/80 text-lg leading-relaxed">
+              Once an expert commits, it&apos;s etched in the blockchain (metaphorically). No edits, no hacks, just pure prediction power.
+            </p>
           </div>
-        </CardContent>
-      </Card>
+          <div className="glass-card p-10 rounded-3xl border-l-8 border-pink-400">
+            <div className="text-5xl mb-6">🔓</div>
+            <h3 className="font-black text-white text-2xl mb-4">Total Transparency</h3>
+            <p className="text-white/80 text-lg leading-relaxed">
+              Every result is public. We reveal the truth after the market closes, bridging the gap between talk and walk.
+            </p>
+          </div>
+          <div className="glass-card p-10 rounded-3xl border-l-8 border-cyan-400">
+            <div className="text-5xl mb-6">📊</div>
+            <h3 className="font-black text-white text-2xl mb-4">Smart Metrics</h3>
+            <p className="text-white/80 text-lg leading-relaxed">
+              Our Verivo Score is the industry benchmark for expert reliability. We track everything so you don&apos;t have to.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

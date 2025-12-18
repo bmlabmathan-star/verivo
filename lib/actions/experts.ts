@@ -3,50 +3,62 @@
 import { createClient } from "@/lib/supabase/server"
 
 export async function getExperts() {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from("experts")
-    .select(`
-      *,
-      expert_stats (
-        total_predictions,
-        correct_predictions,
-        accuracy_rate,
-        verivo_score
-      )
-    `)
-    .order("verivo_score", { foreignTable: "expert_stats", ascending: false })
+    const { data, error } = await supabase
+      .from("experts")
+      .select(`
+        *,
+        expert_stats (
+          total_predictions,
+          correct_predictions,
+          accuracy_rate,
+          verivo_score
+        )
+      `)
+      .order("verivo_score", { foreignTable: "expert_stats", ascending: false })
 
-  if (error) {
-    throw new Error(error.message)
+    if (error) {
+      console.error("Database error in getExperts:", error.message)
+      return []
+    }
+
+    return data || []
+  } catch (err) {
+    console.error("Unexpected error in getExperts:", err)
+    return []
   }
-
-  return data
 }
 
 export async function getExpertById(expertId: string) {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from("experts")
-    .select(`
-      *,
-      expert_stats (
-        total_predictions,
-        correct_predictions,
-        accuracy_rate,
-        verivo_score
-      )
-    `)
-    .eq("id", expertId)
-    .single()
+    const { data, error } = await supabase
+      .from("experts")
+      .select(`
+        *,
+        expert_stats (
+          total_predictions,
+          correct_predictions,
+          accuracy_rate,
+          verivo_score
+        )
+      `)
+      .eq("id", expertId)
+      .single()
 
-  if (error) {
-    throw new Error(error.message)
+    if (error) {
+      console.error("Database error in getExpertById:", error.message)
+      return null
+    }
+
+    return data
+  } catch (err) {
+    console.error("Unexpected error in getExpertById:", err)
+    return null
   }
-
-  return data
 }
 
 export async function getCurrentExpert() {

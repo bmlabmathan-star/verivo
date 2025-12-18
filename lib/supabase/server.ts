@@ -4,12 +4,22 @@ import { cookies } from 'next/headers'
 export async function createClient() {
   const cookieStore = await cookies()
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL! || 'https://placeholder.supabase.co'
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! || 'placeholder-key'
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  /*
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) console.warn('Usage of fallback Supabase URL')
-  */
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('Supabase environment variables are missing. Using placeholder client.')
+    return createServerClient(
+      'https://placeholder.supabase.co',
+      'placeholder-key',
+      {
+        cookies: {
+          getAll() { return [] },
+          setAll() {}
+        }
+      }
+    )
+  }
 
   return createServerClient(
     supabaseUrl,

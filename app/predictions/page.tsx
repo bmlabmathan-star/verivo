@@ -6,21 +6,21 @@ export default async function PredictionsPage() {
   const predictions = await getPredictions()
 
   return (
-    <div className="container py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-white mb-2">Expert Predictions</h1>
-        <p className="text-lg text-white/90">
-          Browse all expert predictions and their validation results
+    <div className="container py-12 max-w-5xl">
+      <div className="mb-12 text-center">
+        <h1 className="text-5xl md:text-7xl font-black text-white mb-4 tracking-tighter drop-shadow-xl animate-in fade-in slide-in-from-top-10 duration-700">
+          MARKET INSIGHTS
+        </h1>
+        <p className="text-xl text-white/80 font-medium">
+          Real-time predictions from the world's most accurate financial minds.
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {predictions.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center text-gray-500">
-              No predictions found.
-            </CardContent>
-          </Card>
+          <div className="glass-card p-16 text-center text-white/40">
+            No active predictions found in the vault.
+          </div>
         ) : (
           predictions.map((prediction) => (
             <PredictionCard

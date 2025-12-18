@@ -45,45 +45,51 @@ export async function getPredictions(filters?: {
   revealed?: boolean
   expert_id?: string
 }) {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  let query = supabase
-    .from("predictions")
-    .select(`
-      *,
-      experts:expert_id (
-        id,
-        name,
-        username
-      ),
-      validations (
-        id,
-        actual_value,
-        is_correct,
-        validated_at
-      )
-    `)
-    .order("created_at", { ascending: false })
+    let query = supabase
+      .from("predictions")
+      .select(`
+        *,
+        experts:expert_id (
+          id,
+          name,
+          username
+        ),
+        validations (
+          id,
+          actual_value,
+          is_correct,
+          validated_at
+        )
+      `)
+      .order("created_at", { ascending: false })
 
-  if (filters?.category) {
-    query = query.eq("category", filters.category)
+    if (filters?.category) {
+      query = query.eq("category", filters.category)
+    }
+
+    if (filters?.revealed !== undefined) {
+      query = query.eq("is_revealed", filters.revealed)
+    }
+
+    if (filters?.expert_id) {
+      query = query.eq("expert_id", filters.expert_id)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      console.error("Database error in getPredictions:", error.message)
+      return []
+    }
+
+    return data || []
+  } catch (err) {
+    console.error("Unexpected error in getPredictions:", err)
+    return []
   }
-
-  if (filters?.revealed !== undefined) {
-    query = query.eq("is_revealed", filters.revealed)
-  }
-
-  if (filters?.expert_id) {
-    query = query.eq("expert_id", filters.expert_id)
-  }
-
-  const { data, error } = await query
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return data
 }
 
 export async function validatePrediction(predictionId: string, actualValue: number, isCorrect: boolean) {

@@ -32,9 +32,58 @@
     @apply border-border;
   }
   body {
-    @apply bg-gradient-to-br from-purple-500 via-purple-600 to-purple-800 text-foreground;
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-size: 400% 400%;
+    animation: gradient-animation 15s ease infinite;
+    @apply text-foreground font-sans;
     min-height: 100vh;
   }
+}
+
+@keyframes gradient-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Glassmorphism */
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.glass-card-dark {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Custom premium gradients */
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600;
+}
+
+.gradient-border {
+  border: 2px solid;
+  border-image: linear-gradient(to right, #8a2be2, #ff69b4) 1;
+}
+
+/* Hover Effects */
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(138, 43, 226, 0.5);
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
 }
 
 /* Custom gradient background */
@@ -48,7 +97,8 @@
 }
 
 .card-hover:hover {
-  @apply transform -translate-y-1 scale-[1.02] shadow-lg;
+  @apply transform -translate-y-2 scale-[1.01] shadow-2xl;
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* Badge styles */

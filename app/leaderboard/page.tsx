@@ -7,10 +7,12 @@ export default async function LeaderboardPage() {
 
   return (
     <div className="container py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-white mb-2">Leaderboard</h1>
-        <p className="text-lg text-white/90">
-          Top experts ranked by Verivo Score
+      <div className="mb-12 text-center">
+        <h1 className="text-5xl md:text-7xl font-black text-white mb-4 tracking-tighter drop-shadow-xl animate-in fade-in zoom-in duration-700">
+          THE HALL OF FAME
+        </h1>
+        <p className="text-xl text-white/80 font-medium">
+          The ultimate ranking of market sages. Top performance, verified by the vault.
         </p>
       </div>
 
@@ -23,36 +25,38 @@ export default async function LeaderboardPage() {
           }
 
           return (
-            <Link key={expert.id} href={`/experts/${expert.id}`}>
-              <Card className="card-hover">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-6">
-                    <div className="text-3xl font-bold text-purple-600 w-12 text-center">
+            <Link key={expert.id} href={`/experts/${expert.id}`} className="group">
+              <Card className="glass-card card-hover border-white/10 overflow-hidden mb-4 hover:border-purple-500/50 transition-all duration-300">
+                <CardContent className="p-0">
+                  <div className="flex flex-col md:flex-row items-center">
+                    <div className="w-24 h-24 md:h-full bg-gradient-to-br from-purple-600 to-pink-600 text-white flex items-center justify-center text-3xl font-black py-8">
                       #{index + 1}
                     </div>
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-2xl font-bold">
-                      {expert.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold">{expert.name}</h3>
-                      <p className="text-sm text-gray-500">@{expert.username}</p>
-                    </div>
-                    <div className="flex gap-8">
-                      <div className="text-center">
-                        <div className="text-lg font-bold">{stats.total_predictions}</div>
-                        <div className="text-xs text-gray-500">Predictions</div>
+                    <div className="flex-1 w-full p-6 flex flex-col md:flex-row items-center gap-8">
+                      <div className="w-16 h-16 rounded-2xl bg-white/10 text-white flex items-center justify-center text-2xl font-black shadow-inner">
+                        {expert.name.charAt(0).toUpperCase()}
                       </div>
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-purple-600">
-                          {stats.accuracy_rate ? `${stats.accuracy_rate.toFixed(1)}%` : 'N/A'}
-                        </div>
-                        <div className="text-xs text-gray-500">Accuracy</div>
+                      <div className="flex-1 text-center md:text-left">
+                        <h3 className="text-2xl font-black text-white group-hover:gradient-text transition-all duration-300">{expert.name}</h3>
+                        <p className="text-white/40 font-mono text-sm leading-tight">@{expert.username}</p>
                       </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-600">
-                          {stats.verivo_score}
+                      <div className="flex gap-12 w-full md:w-auto justify-around">
+                        <div className="text-center group-hover:scale-110 transition-transform duration-300">
+                          <div className="text-2xl font-black text-white">{stats.total_predictions}</div>
+                          <div className="text-[10px] text-white/30 uppercase font-black tracking-widest">Calls</div>
                         </div>
-                        <div className="text-xs text-gray-500">Verivo Score</div>
+                        <div className="text-center group-hover:scale-110 transition-transform duration-300">
+                          <div className="text-2xl font-black text-purple-400">
+                            {stats.accuracy_rate ? `${stats.accuracy_rate.toFixed(0)}%` : '0%'}
+                          </div>
+                          <div className="text-[10px] text-white/30 uppercase font-black tracking-widest">Accuracy</div>
+                        </div>
+                        <div className="text-center group-hover:scale-110 transition-transform duration-300">
+                          <div className="text-4xl font-black text-pink-500 bg-white/5 px-6 py-2 rounded-2xl border border-white/10">
+                            {stats.verivo_score}
+                          </div>
+                          <div className="text-[10px] text-white/30 uppercase font-black tracking-widest mt-2">Score</div>
+                        </div>
                       </div>
                     </div>
                   </div>

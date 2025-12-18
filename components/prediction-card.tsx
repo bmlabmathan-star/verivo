@@ -56,7 +56,7 @@ export function PredictionCard({ prediction, showFull = false }: PredictionCardP
   }
 
   return (
-    <Card className="card-hover">
+    <Card className="glass-card card-hover border-white/10 overflow-hidden group">
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
@@ -97,78 +97,79 @@ export function PredictionCard({ prediction, showFull = false }: PredictionCardP
       </CardHeader>
       <CardContent>
         {isLocked ? (
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6 border-2 border-dashed border-gray-300 text-center">
-            <div className="text-4xl mb-4">🔒</div>
-            <p className="text-gray-600 mb-6">
-              This prediction is locked and will be revealed after the event closes.
+          <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-400/50 to-transparent"></div>
+            <div className="text-5xl mb-6 animate-pulse">🔒</div>
+            <p className="text-white/90 text-xl font-semibold mb-8">
+              This prediction is vault-secured.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-left">
-              <div className="bg-white p-3 rounded">
-                <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Reveal Date</div>
-                <div className="text-sm font-medium">{eventCloseTime.toLocaleDateString()}</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-left">
+              <div className="bg-black/20 p-4 rounded-xl border border-white/10">
+                <div className="text-xs font-bold text-white/50 uppercase mb-1 tracking-widest">Reveal Date</div>
+                <div className="text-lg font-bold text-white">{eventCloseTime.toLocaleDateString()}</div>
               </div>
-              <div className="bg-white p-3 rounded">
-                <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Reveal Time</div>
-                <div className="text-sm font-medium">{eventCloseTime.toLocaleTimeString()}</div>
+              <div className="bg-black/20 p-4 rounded-xl border border-white/10">
+                <div className="text-xs font-bold text-white/50 uppercase mb-1 tracking-widest">Reveal Time</div>
+                <div className="text-lg font-bold text-white">{eventCloseTime.toLocaleTimeString()}</div>
               </div>
               {prediction.target_value && (
-                <div className="bg-white p-3 rounded">
-                  <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Target</div>
-                  <div className="text-sm font-medium">{prediction.target_value}</div>
+                <div className="bg-black/20 p-4 rounded-xl border border-white/10">
+                  <div className="text-xs font-bold text-white/50 uppercase mb-1 tracking-widest">Target</div>
+                  <div className="text-lg font-bold text-white gradient-text">{prediction.target_value}</div>
                 </div>
               )}
             </div>
-            <Button className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 hover:from-yellow-500 hover:to-yellow-600">
-              🔓 Unlock this prediction (coming soon)
+            <Button className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-black py-6 rounded-xl hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(251,191,36,0.2)] hover:shadow-[0_0_30px_rgba(251,191,36,0.4)]">
+              UNLOCK PREDICTIONS
             </Button>
           </div>
         ) : (
-          <div>
-            <p className="text-gray-700 mb-4 p-4 bg-gray-50 rounded-lg border-l-4 border-purple-500">
+          <div className="space-y-6">
+            <div className="text-white/90 text-lg leading-relaxed p-6 bg-white/5 rounded-2xl border-l-8 border-purple-500 backdrop-blur-sm">
               {prediction.prediction}
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div>
-                <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Event Date</div>
-                <div className="text-sm">{new Date(prediction.event_date).toLocaleDateString()}</div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+              <div className="bg-black/10 p-4 rounded-xl border border-white/5">
+                <div className="text-xs font-bold text-white/40 uppercase mb-1 tracking-widest">Event Date</div>
+                <div className="text-white font-semibold">{new Date(prediction.event_date).toLocaleDateString()}</div>
               </div>
               {prediction.target_value && (
-                <div>
-                  <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Target</div>
-                  <div className="text-sm">{prediction.target_value}</div>
+                <div className="bg-black/10 p-4 rounded-xl border border-white/5">
+                  <div className="text-xs font-bold text-white/40 uppercase mb-1 tracking-widest">Target</div>
+                  <div className="text-white font-black text-xl">{prediction.target_value}</div>
                 </div>
               )}
               {prediction.current_value && (
-                <div>
-                  <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Current</div>
-                  <div className="text-sm">{prediction.current_value}</div>
+                <div className="bg-black/10 p-4 rounded-xl border border-white/5">
+                  <div className="text-xs font-bold text-white/40 uppercase mb-1 tracking-widest">Current</div>
+                  <div className="text-white font-black text-xl">{prediction.current_value}</div>
                 </div>
               )}
               {validation && validation.actual_value !== null && (
-                <div>
-                  <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Actual</div>
-                  <div className="text-sm">{validation.actual_value}</div>
+                <div className="bg-white/10 p-4 rounded-xl border border-green-500/30">
+                  <div className="text-xs font-bold text-green-400 uppercase mb-1 tracking-widest">Actual</div>
+                  <div className="text-green-400 font-black text-xl">{validation.actual_value}</div>
                 </div>
               )}
               {prediction.confidence !== null && (
-                <div>
-                  <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Confidence</div>
-                  <div className="text-sm">{prediction.confidence}%</div>
+                <div className="bg-black/10 p-4 rounded-xl border border-white/5">
+                  <div className="text-xs font-bold text-white/40 uppercase mb-1 tracking-widest">Confidence</div>
+                  <div className="text-white font-semibold">{prediction.confidence}%</div>
                 </div>
               )}
               {prediction.direction && (
-                <div>
-                  <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Direction</div>
-                  <div className="text-sm">{getDirectionIcon(prediction.direction)} {prediction.direction.toUpperCase()}</div>
+                <div className="bg-black/10 p-4 rounded-xl border border-white/5">
+                  <div className="text-xs font-bold text-white/40 uppercase mb-1 tracking-widest">Direction</div>
+                  <div className="text-white font-semibold">{getDirectionIcon(prediction.direction)} {prediction.direction.toUpperCase()}</div>
                 </div>
               )}
             </div>
           </div>
         )}
-        <div className="mt-4 pt-4 border-t text-xs text-gray-500 flex justify-between">
-          <span>Created: {formatDateTime(prediction.created_at)}</span>
+        <div className="mt-6 pt-4 border-t border-white/10 text-xs text-white/40 flex justify-between">
+          <span className="flex items-center gap-1">🕒 Created: {formatDateTime(prediction.created_at)}</span>
           {validation?.validated_at && (
-            <span>Validated: {formatDateTime(validation.validated_at)}</span>
+            <span className="flex items-center gap-1">🏁 Validated: {formatDateTime(validation.validated_at)}</span>
           )}
         </div>
       </CardContent>
