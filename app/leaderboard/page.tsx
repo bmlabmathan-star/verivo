@@ -18,7 +18,9 @@ export default async function LeaderboardPage() {
 
       <div className="space-y-4">
         {experts.map((expert, index) => {
-          const stats = expert.expert_stats?.[0] || {
+          // stats can be an array (from join) or a single object (if Supabase returns it as such)
+          const rawStats = Array.isArray(expert.expert_stats) ? expert.expert_stats[0] : expert.expert_stats
+          const stats = rawStats || {
             total_predictions: 0,
             accuracy_rate: 0,
             verivo_score: 0,
@@ -47,7 +49,7 @@ export default async function LeaderboardPage() {
                         </div>
                         <div className="text-center group-hover:scale-110 transition-transform duration-300">
                           <div className="text-2xl font-black text-purple-400">
-                            {stats.accuracy_rate ? `${stats.accuracy_rate.toFixed(0)}%` : '0%'}
+                            {stats.accuracy_rate ? `${Number(stats.accuracy_rate).toFixed(0)}%` : '0%'}
                           </div>
                           <div className="text-[10px] text-white/30 uppercase font-black tracking-widest">Accuracy</div>
                         </div>

@@ -2,23 +2,13 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export async function createClient() {
-  const cookieStore = await cookies()
+  const cookieStore = cookies()
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseKey) {
-    console.warn('Supabase environment variables are missing. Using placeholder client.')
-    return createServerClient(
-      'https://placeholder.supabase.co',
-      'placeholder-key',
-      {
-        cookies: {
-          getAll() { return [] },
-          setAll() {}
-        }
-      }
-    )
+    throw new Error("CRITICAL_ERR: Missing Supabase Environment Variables (NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY). Please check your Netlify/Vercel settings.")
   }
 
   return createServerClient(
@@ -26,18 +16,21 @@ export async function createClient() {
     supabaseKey,
     {
       cookies: {
-        getAll() {
-          return cookieStore.getAll()
+        get(name: string) {
+          return cookieStore.get(name)?.value
         },
-        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+        set(name: string, value: string, options: CookieOptions) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
+            cookieStore.set({ name, value, ...options })
+          } catch (error) {
+            // This can happen in server components where cookies can't be set
+          }
+        },
+        remove(name: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value: '', ...options })
+          } catch (error) {
+            // This can happen in server components where cookies can't be set
           }
         },
       },

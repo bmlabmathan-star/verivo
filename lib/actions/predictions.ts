@@ -52,7 +52,7 @@ export async function getPredictions(filters?: {
       .from("predictions")
       .select(`
         *,
-        experts:expert_id (
+        experts (
           id,
           name,
           username
