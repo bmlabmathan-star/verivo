@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabaseClient"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -15,7 +15,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const supabase = createClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,7 +29,7 @@ export default function LoginPage() {
 
       if (error) throw error
 
-      router.push("/dashboard")
+      router.push("/")
       router.refresh()
     } catch (error: any) {
       setError(error.message || "Failed to login")

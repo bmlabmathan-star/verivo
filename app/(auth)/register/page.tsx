@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabaseClient"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -21,7 +21,6 @@ export default function RegisterPage() {
   })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const supabase = createClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,33 +29,15 @@ export default function RegisterPage() {
 
     try {
       // Sign up user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
       })
 
-      if (authError) throw authError
+      if (error) throw error
 
-      if (authData.user) {
-        // Create expert profile
-        const { error: profileError } = await supabase
-          .from("experts")
-          .insert({
-            id: authData.user.id,
-            username: formData.username,
-            email: formData.email,
-            name: formData.name,
-            bio: formData.bio || null,
-          })
-
-        if (profileError) throw profileError
-
-        // Initialize expert stats
-        await supabase.from("expert_stats").insert({
-          expert_id: authData.user.id,
-        })
-
-        router.push("/onboarding")
+      if (data.user) {
+        router.push("/")
         router.refresh()
       }
     } catch (error: any) {
