@@ -21,7 +21,7 @@ export default function Home() {
           All predictions are validated after events conclude, supporting record-based accountability.
         </p>
         <div className="flex gap-6 justify-center flex-wrap">
-          <Link href="/register">
+          <Link href="/onboarding">
             <Button size="lg" className="bg-white text-purple-700 hover:bg-white/90 hover:scale-105 transition-all duration-300 font-bold px-10 py-8 text-xl rounded-full shadow-[0_0_30px_rgba(255,255,255,0.3)]">
               Start Contributing
             </Button>
@@ -108,8 +108,8 @@ export default function Home() {
       <div className="max-w-4xl mx-auto text-center mb-12">
         <p className="text-white/40 text-sm leading-relaxed glass-card p-6 rounded-2xl border-white/5">
           <span className="font-bold block mb-2 text-white/60 uppercase tracking-widest text-xs">Disclaimer</span>
-          Verivo is a platform for tracking prediction credibility and does not provide financial advice. 
-          We do not guarantee outcomes or specific results. Our mission is to promote transparency 
+          Verivo is a platform for tracking prediction credibility and does not provide financial advice.
+          We do not guarantee outcomes or specific results. Our mission is to promote transparency
           and accountability through verifiable, historical data.
         </p>
       </div>
