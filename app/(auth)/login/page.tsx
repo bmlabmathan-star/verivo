@@ -21,8 +21,16 @@ export default function LoginPage() {
     setError("")
     setLoading(true)
 
-    if (!email || !password) {
-      setError("Please fill in both your email and password.")
+    let hasError = false
+    if (!email) {
+      setError("Email is required.")
+      hasError = true
+    } else if (!password) {
+      setError("Password is required.")
+      hasError = true
+    }
+
+    if (hasError) {
       setLoading(false)
       return
     }
@@ -53,13 +61,15 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           {error && (
-            <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-800">
+            <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-800 border border-red-200">
               {error}
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">
+                Email <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -68,9 +78,14 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
+              {!email && error === "Email is required." && (
+                <p className="text-xs text-red-500">Please enter your email address.</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">
+                Password <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -79,6 +94,9 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              {!password && error === "Password is required." && (
+                <p className="text-xs text-red-500">Please enter your password.</p>
+              )}
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Logging in..." : "Login"}
