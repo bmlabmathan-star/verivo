@@ -56,7 +56,7 @@ export default function RegisterPage() {
           expert_id: authData.user.id,
         })
 
-        router.push("/dashboard")
+        router.push("/onboarding")
         router.refresh()
       }
     } catch (error: any) {
