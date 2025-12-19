@@ -27,6 +27,12 @@ export default function RegisterPage() {
     setError("")
     setLoading(true)
 
+    if (!formData.username || !formData.email || !formData.name || !formData.password) {
+      setError("Please fill in all mandatory fields (Username, Email, Full Name, and Password).")
+      setLoading(false)
+      return
+    }
+
     try {
       // Sign up user
       const { data, error } = await supabase.auth.signUp({

@@ -21,6 +21,12 @@ export default function LoginPage() {
     setError("")
     setLoading(true)
 
+    if (!email || !password) {
+      setError("Please fill in both your email and password.")
+      setLoading(false)
+      return
+    }
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
