@@ -78,7 +78,7 @@ export function Navbar() {
               <Link href="/login">
                 <Button variant="outline" size="sm">Login</Button>
               </Link>
-              <Link href="/onboarding">
+              <Link href="/register">
                 <Button size="sm">Register</Button>
               </Link>
             </>

@@ -21,7 +21,7 @@ export default function Home() {
           All predictions are validated after events conclude, supporting record-based accountability.
         </p>
         <div className="flex gap-6 justify-center flex-wrap">
-          <Link href="/onboarding">
+          <Link href="/register">
             <Button size="lg" className="bg-white text-purple-700 hover:bg-white/90 hover:scale-105 transition-all duration-300 font-bold px-10 py-8 text-xl rounded-full shadow-[0_0_30px_rgba(255,255,255,0.3)]">
               Start Contributing
             </Button>
