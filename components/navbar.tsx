@@ -1,16 +1,16 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabaseClient"
 import { useEffect, useState } from "react"
 import { User } from "@supabase/supabase-js"
 
 export function Navbar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
-  const supabase = createClient()
 
   useEffect(() => {
     const getUser = async () => {
@@ -27,8 +27,16 @@ export function Navbar() {
   }, [supabase])
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    window.location.href = '/'
+    try {
+      await supabase.auth.signOut()
+      setUser(null)
+      router.push('/login')
+      router.refresh()
+    } catch (error) {
+      console.error("Logout error:", error)
+      // Fallback redirection
+      window.location.href = '/login'
+    }
   }
 
   const navLinks = [
