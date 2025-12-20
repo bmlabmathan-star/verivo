@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { StartContributingButton } from "@/components/start-contributing-button"
 
 export default function PredictionsPage() {
   return (
@@ -73,14 +74,16 @@ export default function PredictionsPage() {
       </div>
 
       {/* Roadmap Note */}
+      {/* Call to Action */}
       <div className="text-center p-12 glass-card rounded-3xl border border-white/5 bg-white/5">
-        <div className="inline-block px-4 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-300 text-xs font-bold uppercase tracking-widest mb-6">
-          Phase-1 Initialization
+        <div className="inline-block px-4 py-1 rounded-full bg-green-500/20 border border-green-500/30 text-green-300 text-xs font-bold uppercase tracking-widest mb-6">
+          Live Protocol
         </div>
-        <h3 className="text-2xl font-bold text-white mb-4">Prediction Infrastructure in Development</h3>
-        <p className="text-white/60 max-w-xl mx-auto leading-relaxed">
-          The "Create Prediction" feature set is currently being finalized. Once enabled, contributors will be able to submit locked commitments across diverse market and event domains.
+        <h3 className="text-2xl font-bold text-white mb-4">Ready to Build Your Record?</h3>
+        <p className="text-white/60 max-w-xl mx-auto leading-relaxed mb-8">
+          The protocol is live. Start submitting locked predictions to establish your credibility score on the Verivo network.
         </p>
+        <StartContributingButton />
       </div>
     </div>
   )

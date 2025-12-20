@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { PredictionCard } from "@/components/prediction-card"
-import { PredictionForm } from "@/components/prediction-form"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -32,7 +31,7 @@ export default async function DashboardPage() {
     <div className="container py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold text-white">Expert Dashboard</h1>
-        <Link href="/dashboard?create=true">
+        <Link href="/predictions/create">
           <Button>+ Create Prediction</Button>
         </Link>
       </div>
@@ -65,11 +64,6 @@ export default async function DashboardPage() {
             <p className="text-sm text-white/80">Verivo Score</p>
           </CardHeader>
         </Card>
-      </div>
-
-      {/* Prediction Form */}
-      <div className="mb-8">
-        <PredictionForm />
       </div>
 
       {/* My Predictions */}

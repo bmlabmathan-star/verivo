@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { StartContributingButton } from "@/components/start-contributing-button"
 
 export default function Home() {
   return (
@@ -21,11 +22,7 @@ export default function Home() {
           All predictions are validated after events conclude, supporting record-based accountability.
         </p>
         <div className="flex gap-6 justify-center flex-wrap">
-          <Link href="/register">
-            <Button size="lg" className="bg-white text-purple-700 hover:bg-white/90 hover:scale-105 transition-all duration-300 font-bold px-10 py-8 text-xl rounded-full shadow-[0_0_30px_rgba(255,255,255,0.3)]">
-              Start Contributing
-            </Button>
-          </Link>
+          <StartContributingButton />
           <Link href="/feed">
             <Button size="lg" variant="outline" className="bg-transparent text-white border-2 border-white/50 hover:bg-white/10 hover:border-white hover:scale-105 transition-all duration-300 font-bold px-10 py-8 text-xl rounded-full backdrop-blur-md">
               Live Feed

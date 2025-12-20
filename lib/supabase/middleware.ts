@@ -64,7 +64,8 @@ export async function updateSession(request: NextRequest) {
 
     // Protected routes logic
     const isProtectedRoute = request.nextUrl.pathname.startsWith('/dashboard') ||
-      request.nextUrl.pathname.startsWith('/onboarding')
+      request.nextUrl.pathname.startsWith('/onboarding') ||
+      request.nextUrl.pathname.startsWith('/predictions/create')
 
     if (isProtectedRoute && !user) {
       const url = request.nextUrl.clone()
