@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabaseClient"
 import { validatePrediction } from "@/lib/actions/predictions"
 import { formatDateTime } from "@/lib/utils"
 
@@ -14,7 +14,8 @@ export default function ValidatePredictionPage() {
   const router = useRouter()
   const params = useParams()
   const predictionId = params.id as string
-  const supabase = createClient()
+  // const supabase = createClient() - using shared instance
+
 
   const [prediction, setPrediction] = useState<any>(null)
   const [formData, setFormData] = useState({
