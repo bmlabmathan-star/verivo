@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { supabase } from "@/lib/supabaseClient"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, TrendingUp, TrendingDown } from "lucide-react"
 
 export default function CreatePredictionPage() {
     const router = useRouter()
@@ -69,7 +69,11 @@ export default function CreatePredictionPage() {
 
     const globalAssets = ["Crypto", "Forex", "Commodities"]
 
-    const directions = ["Yes", "No", "Above", "Below"]
+    // Simplified Directions
+    const directions = [
+        { value: "Up", icon: TrendingUp, color: "text-green-500" },
+        { value: "Down", icon: TrendingDown, color: "text-red-500" }
+    ]
 
     const timeframes = [
         { label: "5 Minutes", value: "5m" },
@@ -95,8 +99,6 @@ export default function CreatePredictionPage() {
             case "eod":
                 const eod = new Date(now)
                 eod.setHours(23, 59, 59, 999)
-                // If it's already near end of day, maybe next day? 
-                // For simplified logic, we just set to end of current day.
                 return eod.toISOString()
             case "custom":
                 return customDate ? new Date(customDate).toISOString() : ""
@@ -134,13 +136,12 @@ export default function CreatePredictionPage() {
 
             if (marketType === "stock") {
                 if (!country) throw new Error("Please select a Country")
-                if (!stockAssetType) throw new Error("Please select Asset Type (Stock or Index)")
+                if (!stockAssetType) throw new Error("Please select Asset Type")
                 if (!assetName) throw new Error("Please enter the Asset Name")
 
-                finalCategory = "Stocks" // Keeping backend category simplified
+                finalCategory = "Stocks"
                 finalRegion = country
 
-                // Format: "NSE: INFY - Above (1h)" or "Apple - Above (1h)"
                 const prefix = exchange && exchange !== "Other" ? `${exchange}: ` : ""
                 autoTitle = `${prefix}${assetName.toUpperCase()} - ${direction} (${tfLabel})`
 
@@ -149,15 +150,9 @@ export default function CreatePredictionPage() {
                 finalCategory = globalAsset
                 finalRegion = "Global"
 
-                // For global, we might use statement if provided, otherwise generic? 
-                // Since there's no "Asset Name" input for global in previous steps, 
-                // we should stick to using generic label or require statement.
-                // However, user instructions didn't specify adding inputs for Global path, only Stock flow.
-                // We'll rely on the prediction statement or a generic fallback.
-
-                // Construct check: if no statement, what title?
-                // Let's assume Global flow still relies on statement or defaults.
-                // We can use the category itself if statement is empty.
+                // For global assets, we can prompt for a custom name or just use the category + direction
+                // But typically user might want to specify e.g. "BTC" under crypto.
+                // Since requirements focused on simplified flows, we will use the statement or default.
                 autoTitle = `${globalAsset} - ${direction} (${tfLabel})`
             }
 
@@ -173,8 +168,6 @@ export default function CreatePredictionPage() {
                     region: finalRegion,
                     direction: direction,
                     target_date: finalTargetDate,
-                    // Additional metadata could be stored in a jsonb column if DB supports it, 
-                    // but we are sticking to existing schema.
                 })
 
             if (insertError) throw insertError
@@ -214,7 +207,6 @@ export default function CreatePredictionPage() {
                                         key={type.id}
                                         onClick={() => {
                                             setMarketType(type.id as "stock" | "global")
-                                            // Reset dependents
                                             setCountry("")
                                             setExchange("")
                                             setStockAssetType("")
@@ -237,14 +229,13 @@ export default function CreatePredictionPage() {
                         {marketType === "stock" && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
 
-                                {/* 2a. Country */}
                                 <div className="space-y-3">
                                     <Label className="text-gray-200 text-base">2. Select Country</Label>
                                     <Select
                                         value={country}
                                         onValueChange={(val) => {
                                             setCountry(val)
-                                            setExchange("") // reset exchange when country changes
+                                            setExchange("")
                                         }}
                                     >
                                         <SelectTrigger className="bg-white/5 border-white/10 text-white">
@@ -259,7 +250,6 @@ export default function CreatePredictionPage() {
                                     </Select>
                                 </div>
 
-                                {/* 2b. Exchange (Optional) & Stock Asset Type */}
                                 {country && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in">
                                         <div className="space-y-3">
@@ -294,7 +284,6 @@ export default function CreatePredictionPage() {
                                     </div>
                                 )}
 
-                                {/* 2c. Asset Name Input */}
                                 {stockAssetType && (
                                     <div className="space-y-3 animate-in fade-in">
                                         <Label className="text-gray-200 text-base">Asset Name / Ticker</Label>
@@ -304,6 +293,9 @@ export default function CreatePredictionPage() {
                                             onChange={(e) => setAssetName(e.target.value)}
                                             className="bg-white/5 border-white/10 text-white placeholder:text-gray-600"
                                         />
+                                        <p className="text-xs text-gray-500">
+                                            Enter the common ticker symbol or full company/index name, e.g. BTC-USD, RELIANCE, SPX.
+                                        </p>
                                     </div>
                                 )}
                             </div>
@@ -331,19 +323,20 @@ export default function CreatePredictionPage() {
                             <Label className="text-gray-200 text-base">
                                 {marketType ? "3." : "2."} Position / Direction
                             </Label>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div className="grid grid-cols-2 gap-4">
                                 {directions.map((d) => (
                                     <Button
-                                        key={d}
+                                        key={d.value}
                                         type="button"
                                         variant="outline"
-                                        onClick={() => setDirection(d)}
-                                        className={`border-white/10 ${direction === d
-                                                ? "bg-purple-600 text-white border-purple-600 hover:bg-purple-700"
-                                                : "bg-transparent text-gray-300 hover:bg-white/5"
+                                        onClick={() => setDirection(d.value)}
+                                        className={`h-24 border-white/10 flex flex-col items-center justify-center gap-2 transition-all ${direction === d.value
+                                                ? `bg-white/10 border-white/30 text-white ring-1 ring-white/50 backdrop-blur-sm`
+                                                : "bg-transparent text-gray-400 hover:bg-white/5 hover:text-white"
                                             }`}
                                     >
-                                        {d}
+                                        <d.icon className={`h-8 w-8 ${direction === d.value ? d.color : "text-gray-500"}`} />
+                                        <span className="text-xl font-medium">{d.value}</span>
                                     </Button>
                                 ))}
                             </div>
