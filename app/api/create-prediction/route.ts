@@ -9,10 +9,10 @@ export async function POST(request: Request) {
             category,
             region,
             direction,
-            target_date,
             marketType,
             globalAsset,
-            globalIdentifier
+            globalIdentifier,
+            timeframe // passed from frontend e.g. "5m", "1h"
         } = body
 
         // Get Auth Token
@@ -37,15 +37,51 @@ export async function POST(request: Request) {
         }
 
         let reference_price = null
-        let reference_time = null
+        let reference_time = new Date().toISOString()
         let data_source = null
+        let target_date = null
+        let duration_minutes = 0
+
+        // Parse Duration
+        // timeframe formats: '5m', '10m', '30m', '1h', 'eod', 'custom' or derived
+        // Frontend passed "target_date" before, now we calculate server side for accuracy
+        // except for custom/eod where we might trust frontend or recalc.
+
+        // Basic mapping
+        if (timeframe === '5m') duration_minutes = 5
+        else if (timeframe === '10m') duration_minutes = 10
+        else if (timeframe === '30m') duration_minutes = 30
+        else if (timeframe === '1h') duration_minutes = 60
+        else {
+            // For 'eod' or 'custom', duration is variable. 
+            // We'll calculate it from user provided target_date if present
+            if (body.target_date) {
+                const tDate = new Date(body.target_date)
+                const now = new Date()
+                const diffMs = tDate.getTime() - now.getTime()
+                duration_minutes = Math.floor(diffMs / 60000)
+                if (duration_minutes < 1) duration_minutes = 1 // Min 1 min
+            }
+        }
+
+        // Calculate Target Date based on Duration (if fixed type)
+        if (['5m', '10m', '30m', '1h'].includes(timeframe)) {
+            const nowTime = new Date().getTime()
+            const targetTime = nowTime + (duration_minutes * 60000)
+            target_date = new Date(targetTime).toISOString()
+        } else {
+            // EOD or Custom
+            if (body.target_date) {
+                target_date = body.target_date
+            } else {
+                // fallback
+                target_date = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+            }
+        }
 
         // Reference Price Logic - Crypto Only
         if (marketType === 'global' && globalAsset === 'Crypto' && globalIdentifier) {
             try {
-                // Simple mapping: assume identifier is symbol like "BTC" -> "BTC-USD"
-                // Using Coinbase Public API
-                // Clean identifier
                 const symbol = globalIdentifier.trim().toUpperCase().replace(/[^A-Z0-9]/g, '')
                 const pair = `${symbol}-USD`
 
@@ -59,15 +95,20 @@ export async function POST(request: Request) {
                     const data = await response.json()
                     if (data?.data?.amount) {
                         reference_price = parseFloat(data.data.amount)
-                        reference_time = new Date().toISOString()
+                        reference_time = new Date().toISOString() // refresh exact fetch time
                         data_source = 'Coinbase'
                     }
                 }
             } catch (e) {
                 console.error("Failed to fetch crypto price:", e)
-                // We continue creation even if price fetch fails, or we could error out.
-                // User requirements: "Store the fetched value...". If fetch fails, we store null.
             }
+        }
+
+        // Recalculate target date precisely from reference_time if we successfully fetched price
+        // ensuring "Evaluation must occur only after: reference_time + (timeframe in minutes)"
+        if (reference_price && duration_minutes > 0) {
+            const refTimeMs = new Date(reference_time).getTime()
+            target_date = new Date(refTimeMs + (duration_minutes * 60000)).toISOString()
         }
 
         // Insert Prediction
@@ -80,10 +121,10 @@ export async function POST(request: Request) {
                 region,
                 direction,
                 target_date,
-                // Added columns
                 reference_price,
                 reference_time,
-                data_source
+                data_source,
+                duration_minutes // Store integer minutes
             })
 
         if (insertError) throw insertError
