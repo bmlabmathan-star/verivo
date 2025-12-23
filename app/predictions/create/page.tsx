@@ -130,10 +130,10 @@ export default function CreatePredictionPage() {
         setLoading(true)
 
         try {
-            // 1. Get current user
-            const { data: { user } } = await supabase.auth.getUser()
+            // 1. Get current user session for token
+            const { data: { session } } = await supabase.auth.getSession()
 
-            if (!user) {
+            if (!session) {
                 throw new Error("You must be logged in to create a prediction")
             }
 
@@ -176,19 +176,30 @@ export default function CreatePredictionPage() {
 
             const finalTitle = predictionStatement.trim() || autoTitle
 
-            // 4. Insert into Supabase
-            const { error: insertError } = await supabase
-                .from('predictions')
-                .insert({
-                    user_id: user.id,
+            // 4. Send to API Route
+            const response = await fetch('/api/create-prediction', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({
                     title: finalTitle,
                     category: finalCategory,
                     region: finalRegion,
                     direction: direction,
                     target_date: finalTargetDate,
+                    marketType,
+                    globalAsset,
+                    globalIdentifier
                 })
+            })
 
-            if (insertError) throw insertError
+            const result = await response.json()
+
+            if (!response.ok) {
+                throw new Error(result.error || "Failed to create prediction")
+            }
 
             // 5. Redirect
             router.push('/dashboard')
@@ -233,8 +244,8 @@ export default function CreatePredictionPage() {
                                             setGlobalIdentifier("")
                                         }}
                                         className={`cursor-pointer rounded-lg border p-4 transition-all hover:bg-white/5 ${marketType === type.id
-                                                ? "border-purple-500 bg-purple-500/10"
-                                                : "border-white/10"
+                                            ? "border-purple-500 bg-purple-500/10"
+                                            : "border-white/10"
                                             }`}
                                     >
                                         <div className="font-semibold text-white">{type.label}</div>
@@ -380,8 +391,8 @@ export default function CreatePredictionPage() {
                                         variant="outline"
                                         onClick={() => setDirection(d.value)}
                                         className={`h-24 border-white/10 flex flex-col items-center justify-center gap-2 transition-all ${direction === d.value
-                                                ? `bg-white/10 border-white/30 text-white ring-1 ring-white/50 backdrop-blur-sm`
-                                                : "bg-transparent text-gray-400 hover:bg-white/5 hover:text-white"
+                                            ? `bg-white/10 border-white/30 text-white ring-1 ring-white/50 backdrop-blur-sm`
+                                            : "bg-transparent text-gray-400 hover:bg-white/5 hover:text-white"
                                             }`}
                                     >
                                         <d.icon className={`h-8 w-8 ${direction === d.value ? d.color : "text-gray-500"}`} />
