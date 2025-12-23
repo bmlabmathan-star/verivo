@@ -62,7 +62,7 @@ export default function CreatePredictionPage() {
         "Germany": ["XETRA", "FWB", "Other"],
         "Canada": ["TSX", "TSX-V", "Other"],
         "Australia": ["ASX", "Other"],
-        "Austria": ["WBAG", "Other"], // Added simplistic default for Austria
+        "Austria": ["WBAG", "Other"],
         "France": ["Euronext", "Other"],
         "Global / Other": ["Other"],
     }
@@ -176,6 +176,13 @@ export default function CreatePredictionPage() {
 
             const finalTitle = predictionStatement.trim() || autoTitle
 
+            // Calculate duration in minutes for API
+            let durationMins = 0
+            if (timeframe === '5m') durationMins = 5
+            else if (timeframe === '10m') durationMins = 10
+            else if (timeframe === '30m') durationMins = 30
+            else if (timeframe === '1h') durationMins = 60
+
             // 4. Send to API Route
             const response = await fetch('/api/create-prediction', {
                 method: 'POST',
@@ -191,7 +198,9 @@ export default function CreatePredictionPage() {
                     target_date: finalTargetDate,
                     marketType,
                     globalAsset,
-                    globalIdentifier
+                    globalIdentifier,
+                    timeframe,
+                    duration_minutes: durationMins // Explicitly passed
                 })
             })
 

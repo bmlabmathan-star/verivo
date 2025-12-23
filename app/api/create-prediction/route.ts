@@ -43,38 +43,39 @@ export async function POST(request: Request) {
         let duration_minutes = 0
 
         // Parse Duration
-        // timeframe formats: '5m', '10m', '30m', '1h', 'eod', 'custom' or derived
-        // Frontend passed "target_date" before, now we calculate server side for accuracy
-        // except for custom/eod where we might trust frontend or recalc.
-
-        // Basic mapping
-        if (timeframe === '5m') duration_minutes = 5
-        else if (timeframe === '10m') duration_minutes = 10
-        else if (timeframe === '30m') duration_minutes = 30
-        else if (timeframe === '1h') duration_minutes = 60
-        else {
-            // For 'eod' or 'custom', duration is variable. 
-            // We'll calculate it from user provided target_date if present
-            if (body.target_date) {
-                const tDate = new Date(body.target_date)
-                const now = new Date()
-                const diffMs = tDate.getTime() - now.getTime()
-                duration_minutes = Math.floor(diffMs / 60000)
-                if (duration_minutes < 1) duration_minutes = 1 // Min 1 min
+        // Prefer explicit duration_minutes from body if available (Fix for NULL bug)
+        if (body.duration_minutes !== undefined && body.duration_minutes !== null) {
+            duration_minutes = parseInt(body.duration_minutes)
+        } else {
+            // Fallback to timeframe mapping
+            if (timeframe === '5m') duration_minutes = 5
+            else if (timeframe === '10m') duration_minutes = 10
+            else if (timeframe === '30m') duration_minutes = 30
+            else if (timeframe === '1h') duration_minutes = 60
+            else {
+                // For 'eod' or 'custom', duration is variable. 
+                // We'll calculate it from user provided target_date if present
+                if (body.target_date) {
+                    const tDate = new Date(body.target_date)
+                    const now = new Date()
+                    const diffMs = tDate.getTime() - now.getTime()
+                    duration_minutes = Math.floor(diffMs / 60000)
+                    if (duration_minutes < 1) duration_minutes = 1 // Min 1 min
+                }
             }
         }
 
         // Calculate Target Date based on Duration (if fixed type)
-        if (['5m', '10m', '30m', '1h'].includes(timeframe)) {
+        // If duration_minutes is set, we prefer calculating target_date from now or reference_time
+        if (duration_minutes > 0) {
             const nowTime = new Date().getTime()
             const targetTime = nowTime + (duration_minutes * 60000)
             target_date = new Date(targetTime).toISOString()
         } else {
-            // EOD or Custom
+            // EOD or Custom fallback if duration was 0 or invalid
             if (body.target_date) {
                 target_date = body.target_date
             } else {
-                // fallback
                 target_date = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
             }
         }
