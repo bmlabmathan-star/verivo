@@ -39,50 +39,80 @@ export interface Database {
         Row: {
           id: string
           expert_id: string
-          category: 'equity' | 'commodity' | 'currency' | 'crypto'
-          asset_name: string
-          prediction: string
+          category: string
+          asset_name: string | null
+          prediction: string | null
           target_value: number | null
           current_value: number | null
           confidence: number | null
-          direction: 'up' | 'down' | 'neutral' | null
-          event_date: string
-          event_close_time: string
+          direction: string | null
+          event_date: string | null
+          event_close_time: string | null
           is_locked: boolean
           is_revealed: boolean
           created_at: string
+          // New Columns
+          title: string | null
+          region: string | null
+          target_date: string | null
+          reference_price: number | null
+          reference_time: string | null
+          final_price: number | null
+          outcome: string | null
+          evaluation_time: string | null
+          data_source: string | null
         }
         Insert: {
           id?: string
           expert_id: string
-          category: 'equity' | 'commodity' | 'currency' | 'crypto'
-          asset_name: string
-          prediction: string
+          category: string
+          asset_name?: string | null
+          prediction?: string | null
           target_value?: number | null
           current_value?: number | null
           confidence?: number | null
-          direction?: 'up' | 'down' | 'neutral' | null
-          event_date: string
-          event_close_time: string
+          direction?: string | null
+          event_date?: string | null
+          event_close_time?: string | null
           is_locked?: boolean
           is_revealed?: boolean
           created_at?: string
+          // New Columns
+          title?: string | null
+          region?: string | null
+          target_date?: string | null
+          reference_price?: number | null
+          reference_time?: string | null
+          final_price?: number | null
+          outcome?: string | null
+          evaluation_time?: string | null
+          data_source?: string | null
         }
         Update: {
           id?: string
           expert_id?: string
-          category?: 'equity' | 'commodity' | 'currency' | 'crypto'
-          asset_name?: string
-          prediction?: string
+          category?: string
+          asset_name?: string | null
+          prediction?: string | null
           target_value?: number | null
           current_value?: number | null
           confidence?: number | null
-          direction?: 'up' | 'down' | 'neutral' | null
-          event_date?: string
-          event_close_time?: string
+          direction?: string | null
+          event_date?: string | null
+          event_close_time?: string | null
           is_locked?: boolean
           is_revealed?: boolean
           created_at?: string
+          // New Columns
+          title?: string | null
+          region?: string | null
+          target_date?: string | null
+          reference_price?: number | null
+          reference_time?: string | null
+          final_price?: number | null
+          outcome?: string | null
+          evaluation_time?: string | null
+          data_source?: string | null
         }
       }
       validations: {
@@ -137,6 +167,3 @@ export interface Database {
     }
   }
 }
-
-
-
