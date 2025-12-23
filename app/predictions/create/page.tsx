@@ -41,11 +41,16 @@ export default function CreatePredictionPage() {
         { id: "global", label: "Currency / Commodity / Crypto", desc: "Global assets" }
     ]
 
-    const countries = [
-        "Global / Other", "USA", "India", "China", "Japan", "Germany", "UK", "France", "Brazil", "Italy", "Canada",
-        "South Korea", "Russia", "Australia", "Spain", "Mexico", "Indonesia", "Netherlands", "Saudi Arabia", "Turkey",
-        "Switzerland", "Taiwan", "Poland", "Sweden", "Belgium", "Thailand"
+    // Priority + Other Countries Logic
+    const priorityCountries = ["USA", "UK", "Germany", "France", "Austria", "China", "Canada", "Japan", "India"]
+
+    const otherCountriesRaw = [
+        "Australia", "Belgium", "Brazil", "Global / Other", "Indonesia", "Italy", "Mexico",
+        "Netherlands", "Poland", "Russia", "Saudi Arabia", "South Korea", "Spain",
+        "Sweden", "Switzerland", "Taiwan", "Thailand", "Turkey"
     ]
+
+    const otherCountries = otherCountriesRaw.sort()
 
     // Map countries to major exchanges
     const exchangesByCountry: Record<string, string[]> = {
@@ -57,6 +62,8 @@ export default function CreatePredictionPage() {
         "Germany": ["XETRA", "FWB", "Other"],
         "Canada": ["TSX", "TSX-V", "Other"],
         "Australia": ["ASX", "Other"],
+        "Austria": ["WBAG", "Other"], // Added simplistic default for Austria
+        "France": ["Euronext", "Other"],
         "Global / Other": ["Other"],
     }
 
@@ -253,9 +260,16 @@ export default function CreatePredictionPage() {
                                         <SelectTrigger className="bg-white/5 border-white/10 text-white">
                                             <SelectValue placeholder="Select Country" />
                                         </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Global / Other">Global / Other</SelectItem>
-                                            {countries.filter(c => c !== "Global / Other").sort().map((c) => (
+                                        <SelectContent className="max-h-[300px]">
+                                            {/* Priority Countries */}
+                                            {priorityCountries.map(c => (
+                                                <SelectItem key={c} value={c} className="font-semibold text-purple-200">{c}</SelectItem>
+                                            ))}
+
+                                            <div className="h-px bg-white/10 my-1 mx-2" />
+
+                                            {/* Other Countries */}
+                                            {otherCountries.map(c => (
                                                 <SelectItem key={c} value={c}>{c}</SelectItem>
                                             ))}
                                         </SelectContent>

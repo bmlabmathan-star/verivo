@@ -33,7 +33,7 @@ export function StartContributingButton() {
       disabled={isLoading}
       className="bg-white text-purple-700 hover:bg-white/90 hover:scale-105 transition-all duration-300 font-bold px-10 py-8 text-xl rounded-full shadow-[0_0_30px_rgba(255,255,255,0.3)]"
     >
-      {isLoading ? "Checking..." : "Start Contributing"}
+      {isLoading ? "Checking..." : "Prove Your Insight"}
     </Button>
   )
 }
