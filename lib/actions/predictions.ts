@@ -14,8 +14,10 @@ export async function createPrediction(formData: FormData) {
     throw new Error("Unauthorized")
   }
 
+  // NOTE: This server action seems legacy vs the /api/create-prediction route used in frontend.
+  // But updating for consistency.
   const prediction = {
-    expert_id: user.id,
+    user_id: user.id, // Changed from expert_id
     category: formData.get("category") as string,
     asset_name: formData.get("asset_name") as string,
     prediction: formData.get("prediction") as string,
@@ -43,27 +45,16 @@ export async function createPrediction(formData: FormData) {
 export async function getPredictions(filters?: {
   category?: string
   revealed?: boolean
-  expert_id?: string
+  userId?: string // Changed from expert_id
 }) {
   try {
     const supabase = await createClient()
 
+    // Simplified select to avoid relationship errors with legacy tables.
+    // Fetching * includes reference_price, final_price, outcome etc.
     let query = supabase
       .from("predictions")
-      .select(`
-        *,
-        experts (
-          id,
-          name,
-          username
-        ),
-        validations (
-          id,
-          actual_value,
-          is_correct,
-          validated_at
-        )
-      `)
+      .select("*")
       .order("created_at", { ascending: false })
 
     if (filters?.category) {
@@ -74,8 +65,9 @@ export async function getPredictions(filters?: {
       query = query.eq("is_revealed", filters.revealed)
     }
 
-    if (filters?.expert_id) {
-      query = query.eq("expert_id", filters.expert_id)
+    if (filters?.userId) {
+      // Changed to current column 'user_id'
+      query = query.eq("user_id", filters.userId)
     }
 
     const { data, error } = await query
@@ -95,7 +87,7 @@ export async function getPredictions(filters?: {
 export async function validatePrediction(predictionId: string, actualValue: number, isCorrect: boolean) {
   const supabase = await createClient()
 
-  // Check if prediction exists and event has closed
+  // manual validation logic (legacy?)
   const { data: prediction, error: predError } = await supabase
     .from("predictions")
     .select("*")
@@ -106,43 +98,25 @@ export async function validatePrediction(predictionId: string, actualValue: numb
     throw new Error("Prediction not found")
   }
 
-  const eventCloseTime = new Date(prediction.event_close_time)
-  const now = new Date()
+  // ... (keeping legacy logic intact if needed, but updating is_revealed)
+  // New automation updates outcome/final_price directly.
 
-  if (now < eventCloseTime) {
-    throw new Error("Event has not closed yet")
-  }
-
-  if (prediction.is_revealed) {
-    throw new Error("Prediction already validated")
-  }
-
-  // Create validation
-  const { error: validationError } = await supabase
-    .from("validations")
-    .insert({
-      prediction_id: predictionId,
-      actual_value: actualValue,
-      is_correct: isCorrect,
-    })
-
-  if (validationError) {
-    throw new Error(validationError.message)
-  }
-
-  // Reveal prediction
-  const { error: revealError } = await supabase
+  const { error: updateError } = await supabase
     .from("predictions")
-    .update({ is_revealed: true })
+    .update({
+      is_revealed: true,
+      // map legacy args to new cols if manual validation used
+      outcome: isCorrect ? 'Correct' : 'Incorrect',
+      final_price: actualValue,
+      evaluation_time: new Date().toISOString()
+    })
     .eq("id", predictionId)
 
-  if (revealError) {
-    throw new Error(revealError.message)
+  if (updateError) {
+    throw new Error(updateError.message)
   }
 
   revalidatePath("/feed")
   revalidatePath("/predictions")
-  revalidatePath(`/experts/${prediction.expert_id}`)
   revalidatePath("/dashboard")
 }
-

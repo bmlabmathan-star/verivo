@@ -18,7 +18,8 @@ export default async function DashboardPage() {
   }
 
   const expert = await getCurrentExpert()
-  const predictions = await getPredictions({ expert_id: user.id })
+  // Updated filter param from expert_id to userId to match new action signature
+  const predictions = await getPredictions({ userId: user.id })
 
   const stats = expert?.expert_stats?.[0] || {
     total_predictions: 0,
@@ -82,7 +83,7 @@ export default async function DashboardPage() {
                 <PredictionCard
                   key={prediction.id}
                   prediction={prediction as any}
-                  showFull={prediction.is_revealed}
+                  showFull={prediction.is_revealed || !!prediction.outcome}
                 />
               ))}
             </div>
@@ -92,6 +93,3 @@ export default async function DashboardPage() {
     </div>
   )
 }
-
-
-
