@@ -2,7 +2,7 @@
 import { schedule } from '@netlify/functions';
 import { createClient } from '@supabase/supabase-js';
 
-const handler = async (event: any, context: any) => {
+const scheduledTask = async (event: any, context: any) => {
     try {
         console.log("Running scheduled crypto validation...");
 
@@ -104,4 +104,4 @@ const handler = async (event: any, context: any) => {
 };
 
 // Rate: Every 1 minute
-export const handler = schedule('* * * * *', handler);
+export const handler = schedule('* * * * *', scheduledTask);
