@@ -26,6 +26,7 @@ export default function CreatePredictionPage() {
 
     // Global Specifics
     const [globalAsset, setGlobalAsset] = useState("")
+    const [globalIdentifier, setGlobalIdentifier] = useState("") // Free text for global asset ID
 
     // Common
     const [direction, setDirection] = useState("")
@@ -107,6 +108,15 @@ export default function CreatePredictionPage() {
         }
     }
 
+    const getGlobalPlaceholder = () => {
+        switch (globalAsset) {
+            case "Crypto": return "e.g. BTC, ETH, SOL"
+            case "Forex": return "e.g. EUR/USD, GBP/JPY"
+            case "Commodities": return "e.g. Gold, Crude Oil, Silver"
+            default: return "e.g. Asset Name"
+        }
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError("")
@@ -146,14 +156,15 @@ export default function CreatePredictionPage() {
                 autoTitle = `${prefix}${assetName.toUpperCase()} - ${direction} (${tfLabel})`
 
             } else {
-                if (!globalAsset) throw new Error("Please select an Asset Type")
+                if (!globalAsset) throw new Error("Please select an Asset Category")
+                if (!globalIdentifier) throw new Error("Please enter the Asset Identifier")
+
                 finalCategory = globalAsset
                 finalRegion = "Global"
 
-                // For global assets, we can prompt for a custom name or just use the category + direction
-                // But typically user might want to specify e.g. "BTC" under crypto.
-                // Since requirements focused on simplified flows, we will use the statement or default.
-                autoTitle = `${globalAsset} - ${direction} (${tfLabel})`
+                // Format: Category: Identifier - Direction (Timeframe)
+                // e.g. Crypto: BTC - Up (1 Hour)
+                autoTitle = `${globalAsset}: ${globalIdentifier.toUpperCase()} - ${direction} (${tfLabel})`
             }
 
             const finalTitle = predictionStatement.trim() || autoTitle
@@ -212,6 +223,7 @@ export default function CreatePredictionPage() {
                                             setStockAssetType("")
                                             setAssetName("")
                                             setGlobalAsset("")
+                                            setGlobalIdentifier("")
                                         }}
                                         className={`cursor-pointer rounded-lg border p-4 transition-all hover:bg-white/5 ${marketType === type.id
                                                 ? "border-purple-500 bg-purple-500/10"
@@ -303,18 +315,41 @@ export default function CreatePredictionPage() {
 
                         {/* --- GLOBAL PATH --- */}
                         {marketType === "global" && (
-                            <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                                <Label className="text-gray-200 text-base">2. Select Global Asset</Label>
-                                <Select value={globalAsset} onValueChange={setGlobalAsset}>
-                                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                                        <SelectValue placeholder="Select Assessment Category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {globalAssets.map((a) => (
-                                            <SelectItem key={a} value={a}>{a}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                            <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
+                                <div className="space-y-3">
+                                    <Label className="text-gray-200 text-base">2. Select Global Asset Category</Label>
+                                    <Select
+                                        value={globalAsset}
+                                        onValueChange={(val) => {
+                                            setGlobalAsset(val)
+                                            setGlobalIdentifier("") // Clear identifier when category changes
+                                        }}
+                                    >
+                                        <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                                            <SelectValue placeholder="Select Assessment Category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {globalAssets.map((a) => (
+                                                <SelectItem key={a} value={a}>{a}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {globalAsset && (
+                                    <div className="space-y-3 animate-in fade-in">
+                                        <Label className="text-gray-200 text-base">Asset Identifier</Label>
+                                        <Input
+                                            placeholder={getGlobalPlaceholder()}
+                                            value={globalIdentifier}
+                                            onChange={(e) => setGlobalIdentifier(e.target.value)}
+                                            className="bg-white/5 border-white/10 text-white placeholder:text-gray-600"
+                                        />
+                                        <p className="text-xs text-gray-500">
+                                            Enter the specific asset symbol or name (e.g. BTC, EUR-USD, Gold).
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         )}
 
