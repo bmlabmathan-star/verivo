@@ -4,23 +4,25 @@ import { createClient } from '@supabase/supabase-js';
 
 const scheduledTask = async (event: any, context: any) => {
     try {
-        console.log("Running scheduled crypto validation...");
+        console.log("Running scheduled crypto validation with enforced timing...");
 
         const supabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
 
-        const now = new Date().toISOString();
-
         // 1. Query pending crypto predictions
+        // Strict Criteria:
+        // - Category = 'Crypto'
+        // - Outcome is NULL (not evaluated)
+        // - duration_minutes IS NOT NULL (must have duration)
         const { data: predictions, error: fetchError } = await supabase
             .from('predictions')
             .select('*')
             .eq('category', 'Crypto')
             .is('outcome', null)
-            .lte('target_date', now)
-            .limit(50); // Process in batches
+            .not('duration_minutes', 'is', null) // Skip legacy/bugged rows
+            .limit(50);
 
         if (fetchError) {
             console.error("Error fetching predictions:", fetchError);
@@ -32,9 +34,24 @@ const scheduledTask = async (event: any, context: any) => {
             return { statusCode: 200 };
         }
 
+        const now = new Date();
+
         // 2. Process
         for (const pred of predictions) {
             try {
+                // Determine eligibility strictly
+                if (!pred.reference_time || !pred.duration_minutes) continue;
+
+                const refTime = new Date(pred.reference_time).getTime();
+                const durationMs = pred.duration_minutes * 60000;
+                const unlockTime = refTime + durationMs;
+
+                // Skip if not yet time to evaluate
+                if (now.getTime() < unlockTime) {
+                    continue;
+                }
+
+                // Proceed with evaluation
                 // Parse symbol
                 let symbol = "";
                 const titleParts = pred.title.split(':');
@@ -65,7 +82,7 @@ const scheduledTask = async (event: any, context: any) => {
                 const final_price = parseFloat(priceData?.data?.amount);
 
                 if (isNaN(final_price)) continue;
-                if (!pred.reference_price) continue; // Skip if no reference
+                if (!pred.reference_price) continue;
 
                 // Determine Outcome
                 let outcome = 'Incorrect';
@@ -84,11 +101,11 @@ const scheduledTask = async (event: any, context: any) => {
                     .update({
                         final_price: final_price,
                         outcome: outcome,
-                        evaluation_time: new Date().toISOString()
+                        evaluation_time: now.toISOString()
                     })
                     .eq('id', pred.id);
 
-                console.log(`Validated ${pred.id}: ${outcome}`);
+                console.log(`Validated ${pred.id} (${symbol}): ${outcome}. Ref: ${refPrice}, Final: ${final_price}`);
 
             } catch (err) {
                 console.error(`Error processing pred ${pred.id}:`, err);
