@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,28 +17,58 @@ export default function CreatePredictionPage() {
 
     // Structured State
     const [marketType, setMarketType] = useState<"stock" | "global" | "">("")
+
+    // Stock Specifics
     const [country, setCountry] = useState("")
+    const [exchange, setExchange] = useState("") // Optional
+    const [stockAssetType, setStockAssetType] = useState<"Stock" | "Index" | "">("")
+    const [assetName, setAssetName] = useState("") // Free text
+
+    // Global Specifics
     const [globalAsset, setGlobalAsset] = useState("")
+
+    // Common
     const [direction, setDirection] = useState("")
     const [timeframe, setTimeframe] = useState("")
     const [customDate, setCustomDate] = useState("")
-    const [predictionStatement, setPredictionStatement] = useState("") // Free text (formerly title)
+    const [predictionStatement, setPredictionStatement] = useState("") // Free text input
 
-    // Options
+    // --- Options ---
+
     const marketTypes = [
         { id: "stock", label: "Stock / Index", desc: "Country specifics" },
         { id: "global", label: "Currency / Commodity / Crypto", desc: "Global assets" }
     ]
 
     const countries = [
-        "Global / Other", "USA", "China", "Japan", "Germany", "India", "UK", "France", "Brazil", "Italy", "Canada",
+        "Global / Other", "USA", "India", "China", "Japan", "Germany", "UK", "France", "Brazil", "Italy", "Canada",
         "South Korea", "Russia", "Australia", "Spain", "Mexico", "Indonesia", "Netherlands", "Saudi Arabia", "Turkey",
         "Switzerland", "Taiwan", "Poland", "Sweden", "Belgium", "Thailand"
     ]
 
+    // Map countries to major exchanges
+    const exchangesByCountry: Record<string, string[]> = {
+        "USA": ["NYSE", "NASDAQ", "AMEX", "Other"],
+        "India": ["NSE", "BSE", "Other"],
+        "UK": ["LSE", "Other"],
+        "Japan": ["TSE", "Other"],
+        "China": ["SSE", "SZSE", "HKEX", "Other"],
+        "Germany": ["XETRA", "FWB", "Other"],
+        "Canada": ["TSX", "TSX-V", "Other"],
+        "Australia": ["ASX", "Other"],
+        "Global / Other": ["Other"],
+    }
+
+    // Default exchanges if country not found in map
+    const defaultExchanges = ["Other"]
+
+    const currentExchanges = useMemo(() => {
+        if (!country) return []
+        return exchangesByCountry[country] || defaultExchanges
+    }, [country])
+
     const globalAssets = ["Crypto", "Forex", "Commodities"]
 
-    // Using existing directions as requested
     const directions = ["Yes", "No", "Above", "Below"]
 
     const timeframes = [
@@ -65,6 +95,8 @@ export default function CreatePredictionPage() {
             case "eod":
                 const eod = new Date(now)
                 eod.setHours(23, 59, 59, 999)
+                // If it's already near end of day, maybe next day? 
+                // For simplified logic, we just set to end of current day.
                 return eod.toISOString()
             case "custom":
                 return customDate ? new Date(customDate).toISOString() : ""
@@ -86,49 +118,68 @@ export default function CreatePredictionPage() {
                 throw new Error("You must be logged in to create a prediction")
             }
 
-            // 2. data prep
-            const finalTargetDate = calculateTargetDate()
-            if (!finalTargetDate) {
-                throw new Error("Please select a valid timeframe target")
-            }
+            // 2. Validate basic inputs
+            if (!marketType) throw new Error("Please select a Market Type")
+            if (!direction) throw new Error("Please select a Direction")
+            if (!timeframe) throw new Error("Please select a Timeframe")
+            if (timeframe === "custom" && !customDate) throw new Error("Please select a valid date")
 
-            // Determine Category & Region based on Market Type
+            // 3. Prepare Data
+            const finalTargetDate = calculateTargetDate()
             let finalCategory = ""
             let finalRegion = ""
+            let autoTitle = ""
+
+            const tfLabel = timeframes.find(t => t.value === timeframe)?.label || timeframe
 
             if (marketType === "stock") {
-                finalCategory = "Stocks"
-                finalRegion = country || "Global"
+                if (!country) throw new Error("Please select a Country")
+                if (!stockAssetType) throw new Error("Please select Asset Type (Stock or Index)")
+                if (!assetName) throw new Error("Please enter the Asset Name")
+
+                finalCategory = "Stocks" // Keeping backend category simplified
+                finalRegion = country
+
+                // Format: "NSE: INFY - Above (1h)" or "Apple - Above (1h)"
+                const prefix = exchange && exchange !== "Other" ? `${exchange}: ` : ""
+                autoTitle = `${prefix}${assetName.toUpperCase()} - ${direction} (${tfLabel})`
+
             } else {
+                if (!globalAsset) throw new Error("Please select an Asset Type")
                 finalCategory = globalAsset
                 finalRegion = "Global"
+
+                // For global, we might use statement if provided, otherwise generic? 
+                // Since there's no "Asset Name" input for global in previous steps, 
+                // we should stick to using generic label or require statement.
+                // However, user instructions didn't specify adding inputs for Global path, only Stock flow.
+                // We'll rely on the prediction statement or a generic fallback.
+
+                // Construct check: if no statement, what title?
+                // Let's assume Global flow still relies on statement or defaults.
+                // We can use the category itself if statement is empty.
+                autoTitle = `${globalAsset} - ${direction} (${tfLabel})`
             }
 
-            if (!finalCategory) throw new Error("Please select an asset type or category")
-            if (marketType === "stock" && !country) throw new Error("Please select a country")
-            if (!direction) throw new Error("Please select a direction")
+            const finalTitle = predictionStatement.trim() || autoTitle
 
-            // Auto-generate title if missing
-            // Format: "{Asset/Country} - {Direction} ({TimeframeLabel})"
-            const tfLabel = timeframes.find(t => t.value === timeframe)?.label || timeframe
-            const generatedTitle = predictionStatement.trim() ||
-                `${marketType === 'stock' ? country : globalAsset} - ${direction} (${tfLabel})`
-
-            // 3. Insert into Supabase
+            // 4. Insert into Supabase
             const { error: insertError } = await supabase
                 .from('predictions')
                 .insert({
                     user_id: user.id,
-                    title: generatedTitle,
+                    title: finalTitle,
                     category: finalCategory,
                     region: finalRegion,
                     direction: direction,
                     target_date: finalTargetDate,
+                    // Additional metadata could be stored in a jsonb column if DB supports it, 
+                    // but we are sticking to existing schema.
                 })
 
             if (insertError) throw insertError
 
-            // 4. Redirect
+            // 5. Redirect
             router.push('/dashboard')
             router.refresh()
 
@@ -165,6 +216,9 @@ export default function CreatePredictionPage() {
                                             setMarketType(type.id as "stock" | "global")
                                             // Reset dependents
                                             setCountry("")
+                                            setExchange("")
+                                            setStockAssetType("")
+                                            setAssetName("")
                                             setGlobalAsset("")
                                         }}
                                         className={`cursor-pointer rounded-lg border p-4 transition-all hover:bg-white/5 ${marketType === type.id
@@ -179,30 +233,89 @@ export default function CreatePredictionPage() {
                             </div>
                         </div>
 
-                        {/* 2. Conditional: Country OR Asset Type */}
+                        {/* --- STOCK / INDEX PATH --- */}
                         {marketType === "stock" && (
-                            <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                                <Label className="text-gray-200 text-base">2. Select Country / Market</Label>
-                                <Select onValueChange={setCountry} value={country}>
-                                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                                        <SelectValue placeholder="Select Country" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Global / Other">Global / Other</SelectItem>
-                                        {countries.filter(c => c !== "Global / Other").sort().map((c) => (
-                                            <SelectItem key={c} value={c}>{c}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                            <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
+
+                                {/* 2a. Country */}
+                                <div className="space-y-3">
+                                    <Label className="text-gray-200 text-base">2. Select Country</Label>
+                                    <Select
+                                        value={country}
+                                        onValueChange={(val) => {
+                                            setCountry(val)
+                                            setExchange("") // reset exchange when country changes
+                                        }}
+                                    >
+                                        <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                                            <SelectValue placeholder="Select Country" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Global / Other">Global / Other</SelectItem>
+                                            {countries.filter(c => c !== "Global / Other").sort().map((c) => (
+                                                <SelectItem key={c} value={c}>{c}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* 2b. Exchange (Optional) & Stock Asset Type */}
+                                {country && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in">
+                                        <div className="space-y-3">
+                                            <Label className="text-gray-200 text-base">Exchange <span className="text-gray-500 text-xs font-normal">(Optional)</span></Label>
+                                            <Select value={exchange} onValueChange={setExchange}>
+                                                <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                                                    <SelectValue placeholder="Select Exchange" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {currentExchanges.map((ex) => (
+                                                        <SelectItem key={ex} value={ex}>{ex}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <Label className="text-gray-200 text-base">Asset Type</Label>
+                                            <Select
+                                                value={stockAssetType}
+                                                onValueChange={(val) => setStockAssetType(val as "Stock" | "Index")}
+                                            >
+                                                <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                                                    <SelectValue placeholder="Select Type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Stock">Stock</SelectItem>
+                                                    <SelectItem value="Index">Index</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* 2c. Asset Name Input */}
+                                {stockAssetType && (
+                                    <div className="space-y-3 animate-in fade-in">
+                                        <Label className="text-gray-200 text-base">Asset Name / Ticker</Label>
+                                        <Input
+                                            placeholder={stockAssetType === "Stock" ? "e.g. AAPL, Reliance, Tesla..." : "e.g. Nifty 50, S&P 500..."}
+                                            value={assetName}
+                                            onChange={(e) => setAssetName(e.target.value)}
+                                            className="bg-white/5 border-white/10 text-white placeholder:text-gray-600"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
 
+                        {/* --- GLOBAL PATH --- */}
                         {marketType === "global" && (
                             <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                                <Label className="text-gray-200 text-base">2. Select Asset Type</Label>
-                                <Select onValueChange={setGlobalAsset} value={globalAsset}>
+                                <Label className="text-gray-200 text-base">2. Select Global Asset</Label>
+                                <Select value={globalAsset} onValueChange={setGlobalAsset}>
                                     <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                                        <SelectValue placeholder="Select Asset Type" />
+                                        <SelectValue placeholder="Select Assessment Category" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {globalAssets.map((a) => (
@@ -213,9 +326,11 @@ export default function CreatePredictionPage() {
                             </div>
                         )}
 
-                        {/* 3. Direction */}
+                        {/* 3. Direction (Common) */}
                         <div className="space-y-3">
-                            <Label className="text-gray-200 text-base">3. Position / Direction</Label>
+                            <Label className="text-gray-200 text-base">
+                                {marketType ? "3." : "2."} Position / Direction
+                            </Label>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                 {directions.map((d) => (
                                     <Button
@@ -234,10 +349,12 @@ export default function CreatePredictionPage() {
                             </div>
                         </div>
 
-                        {/* 4. Timeframe */}
+                        {/* 4. Timeframe (Common) */}
                         <div className="space-y-3">
-                            <Label className="text-gray-200 text-base">4. Prediction Timeframe</Label>
-                            <Select onValueChange={setTimeframe} value={timeframe}>
+                            <Label className="text-gray-200 text-base">
+                                {marketType ? "4." : "3."} Prediction Timeframe
+                            </Label>
+                            <Select value={timeframe} onValueChange={setTimeframe}>
                                 <SelectTrigger className="bg-white/5 border-white/10 text-white">
                                     <SelectValue placeholder="Select Duration" />
                                 </SelectTrigger>
@@ -267,11 +384,11 @@ export default function CreatePredictionPage() {
                         {/* 5. Optional Statement */}
                         <div className="space-y-3">
                             <Label htmlFor="statement" className="text-gray-200 text-base">
-                                5. Prediction Statement <span className="text-gray-500 text-sm font-normal">(Optional)</span>
+                                {marketType ? "5." : "4."} Prediction Statement <span className="text-gray-500 text-sm font-normal">(Optional)</span>
                             </Label>
                             <Input
                                 id="statement"
-                                placeholder="e.g. BTC will breakout above resistance..."
+                                placeholder="e.g. Breakout above resistance confirmed..."
                                 value={predictionStatement}
                                 onChange={(e) => setPredictionStatement(e.target.value)}
                                 className="bg-white/5 border-white/10 text-white placeholder:text-gray-600"
