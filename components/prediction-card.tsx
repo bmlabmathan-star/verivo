@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatDateTime } from "@/lib/utils"
 import { Database } from "@/types/database.types"
 import { TrendingUp, TrendingDown, Clock, Activity, CheckCircle2, XCircle, AlertCircle } from "lucide-react"
 
@@ -75,6 +74,20 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
 
   const catColor = categoryColors[prediction.category || ''] || 'bg-white/10 text-white/60 border-white/10'
 
+  // Time Formatter
+  const formatTimestamp = (dateString: string | null) => {
+    if (!dateString) return ""
+    const date = new Date(dateString)
+    const day = date.getUTCDate()
+    const month = date.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })
+    const hours = date.getUTCHours().toString().padStart(2, '0')
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0')
+    return `${hours}:${minutes} • ${day} ${month} (UTC)`
+  }
+
+  const lockedAt = formatTimestamp(prediction.created_at)
+  const evaluatedAt = prediction.evaluation_time ? formatTimestamp(prediction.evaluation_time) : null
+
   return (
     <Card className={`glass-card border-white/10 overflow-hidden transition-all hover:border-white/20 hover:bg-white/5`}>
       <CardHeader className="pb-3 border-b border-white/5">
@@ -87,8 +100,6 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
               <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold border ${catColor}`}>
                 {prediction.category || "General"}
               </span>
-              <span>•</span>
-              <span>{formatDateTime(prediction.created_at)}</span>
             </div>
           </div>
           <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md border border-white/10">
@@ -130,12 +141,19 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
         {/* Footer actions / Status */}
         <div className="flex items-center justify-between pt-2">
           {getStatusBadge()}
-
           {prediction.experts && (
             <Link href={`/experts/${prediction.experts.username || '#'}`} className="text-xs text-white/40 hover:text-white transition-colors">
               by {prediction.experts.name}
             </Link>
           )}
+        </div>
+
+        {/* Timestamps */}
+        <div className="pt-3 border-t border-white/5 flex flex-col gap-1 text-[10px] text-white/30 text-right">
+          <div>Locked at {lockedAt}</div>
+          <div>
+            {evaluatedAt ? `Evaluated at ${evaluatedAt}` : "Evaluation pending"}
+          </div>
         </div>
       </CardContent>
     </Card>
