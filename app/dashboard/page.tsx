@@ -16,6 +16,8 @@ type CredibilityScore = {
   type: 'bucket' | 'overall'
 }
 
+const DURATION_BUCKETS = [5, 10, 30, 60]
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const {
@@ -42,11 +44,18 @@ export default async function DashboardPage() {
     .filter((s) => s.type === 'bucket')
     .sort((a, b) => (a.duration_minutes || 0) - (b.duration_minutes || 0))
 
-  const stats = expert?.expert_stats?.[0] || {
-    total_predictions: 0,
-    correct_predictions: 0,
-    accuracy_rate: 0,
-    verivo_score: 0,
+    .filter((s) => s.type === 'bucket')
+    .sort((a, b) => (a.duration_minutes || 0) - (b.duration_minutes || 0))
+
+  const totalPredictionsCount = predictions.length
+  const correctPredictionsCount = predictions.filter((p: any) => p.outcome === 'Correct').length
+  const accuracyRate = overallScore?.accuracy_percentage || 0
+
+  const stats = {
+    total_predictions: totalPredictionsCount,
+    correct_predictions: correctPredictionsCount,
+    accuracy_rate: accuracyRate,
+    verivo_score: accuracyRate,
   }
 
   return (
