@@ -154,10 +154,15 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
         </div>
 
         {/* Timestamps */}
-        <div className="pt-3 border-t border-white/10 flex flex-col gap-1 text-xs text-white/70 text-right font-medium">
-          <div>Locked: {lockedAt}</div>
-          <div>
-            {evaluatedAt ? `Evaluated: ${evaluatedAt}` : "Evaluation pending"}
+        <div className="pt-2 mt-2 border-t border-white/5">
+          <div className="bg-white/5 rounded-lg p-2 text-right">
+            <div className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-0.5">Timeline</div>
+            <div className="text-xs font-mono text-white/90">
+              <span className="text-white/50">Locked:</span> {lockedAt}
+            </div>
+            <div className="text-xs font-mono text-white/90">
+              <span className="text-white/50">Evaluated:</span> {evaluatedAt ? evaluatedAt : <span className="text-yellow-500/80 italic">Pending</span>}
+            </div>
           </div>
         </div>
       </CardContent>
