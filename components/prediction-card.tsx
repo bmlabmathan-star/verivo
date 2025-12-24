@@ -159,15 +159,35 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
           )}
         </div>
 
-        {/* Timestamps */}
-        <div className="pt-2 mt-2 border-t border-white/5">
-          <div className="bg-blue-950/30 border border-blue-500/10 rounded-lg p-2 text-right">
-            <div className="text-[10px] uppercase tracking-widest text-blue-200/50 font-bold mb-1">Timeline</div>
-            <div className="text-sm font-medium font-mono text-blue-100">
-              <span className="text-blue-300/60 mr-1 text-xs uppercase">Locked:</span> {lockedAt}
+        {/* Timestamps & Duration */}
+        <div className="pt-3 mt-3 border-t border-slate-800/60">
+          <div className="bg-slate-950/50 border border-slate-800/60 rounded-lg p-3 relative group-hover:border-purple-500/20 transition-colors">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Timeline</span>
+              {prediction.duration_minutes && (
+                <span className="text-[10px] font-bold text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+                  {prediction.duration_minutes} MIN
+                </span>
+              )}
             </div>
-            <div className="text-sm font-medium font-mono text-blue-100">
-              <span className="text-blue-300/60 mr-1 text-xs uppercase">Evaluated:</span> {evaluatedAt ? evaluatedAt : <span className="text-yellow-500/80 italic text-xs">Pending</span>}
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center text-sm font-medium font-mono text-slate-300">
+                <span className="text-slate-500 text-xs uppercase tracking-wide">Locked</span>
+                <span>{lockedAt}</span>
+              </div>
+
+              <div className="flex justify-between items-center text-sm font-medium font-mono text-slate-300">
+                <span className="text-slate-500 text-xs uppercase tracking-wide">Evaluated</span>
+                {evaluatedAt ? (
+                  <span>{evaluatedAt}</span>
+                ) : (
+                  <span className="text-yellow-500/80 italic text-xs flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-500/80 animate-pulse" />
+                    Pending
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
