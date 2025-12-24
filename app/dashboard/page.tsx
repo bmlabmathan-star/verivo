@@ -92,74 +92,99 @@ export default async function DashboardPage() {
         <Card className="bg-gradient-to-br from-purple-500 to-purple-700 text-white">
           <CardHeader>
             <CardTitle className="text-2xl text-white">{stats.verivo_score}</CardTitle>
-            <p className="text-sm text-white/80">Verivo Score</p>
+            <div className="space-y-1">
+              <p className="text-sm text-white/80">Verivo Score</p>
+              <p className="text-xs text-white/60">Composite score based on verified accuracy and activity</p>
+            </div>
           </CardHeader>
         </Card>
       </div>
 
       {/* Phase 4: Credibility Scores Display */}
-      {(overallScore || bucketScores.length > 0) && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Credibility Score & Accuracy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {overallScore && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3">Overall Performance</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="p-4 bg-secondary rounded-lg text-center">
-                    <p className="text-sm text-muted-foreground mb-1">Accuracy</p>
-                    <p className="text-3xl font-bold text-primary">{overallScore.accuracy_percentage}%</p>
-                  </div>
-                  <div className="p-4 bg-secondary rounded-lg text-center">
-                    <p className="text-sm text-muted-foreground mb-1">Total Predictions</p>
-                    <p className="text-2xl font-bold">{overallScore.total_predictions}</p>
-                  </div>
-                  <div className="p-4 bg-secondary rounded-lg text-center">
-                    <p className="text-sm text-muted-foreground mb-1">Correct Predictions</p>
-                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{overallScore.correct_predictions}</p>
-                  </div>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Your Credibility & Performance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {overallScore ? (
+            <div className="mb-8">
+              <div className="mb-3">
+                <h3 className="text-lg font-semibold">Overall Performance</h3>
+                <p className="text-sm text-muted-foreground">Calculated from verified predictions</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 bg-secondary rounded-lg text-center">
+                  <p className="text-sm text-muted-foreground mb-1">Accuracy</p>
+                  <p className="text-3xl font-bold text-primary">{overallScore.accuracy_percentage}%</p>
+                </div>
+                <div className="p-4 bg-secondary rounded-lg text-center">
+                  <p className="text-sm text-muted-foreground mb-1">Total Predictions</p>
+                  <p className="text-2xl font-bold">{overallScore.total_predictions}</p>
+                </div>
+                <div className="p-4 bg-secondary rounded-lg text-center">
+                  <p className="text-sm text-muted-foreground mb-1">Correct Predictions</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{overallScore.correct_predictions}</p>
                 </div>
               </div>
-            )}
+            </div>
+          ) : (
+            <div className="mb-8">
+              <div className="mb-3">
+                <h3 className="text-lg font-semibold">Overall Performance</h3>
+                <p className="text-sm text-muted-foreground">Calculated from verified predictions</p>
+              </div>
+              <div className="p-4 bg-secondary/50 rounded-lg text-center border-dashed border-2">
+                <p className="text-sm text-muted-foreground">Insufficient data to calculate overall performance (minimum 10 predictions required)</p>
+              </div>
+            </div>
+          )}
 
-            {bucketScores.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Time-Based Accuracy</h3>
-                <div className="space-y-3">
-                  {bucketScores.map((score) => (
-                    <div
-                      key={score.duration_minutes}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                        <div className="bg-primary/10 text-primary font-bold px-3 py-1 rounded text-sm">
-                          {score.duration_minutes}m
-                        </div>
-                        <span className="text-sm text-muted-foreground">Duration</span>
-                      </div>
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Accuracy by Prediction Timeframe</h3>
+            <div className="space-y-3">
+              {DURATION_BUCKETS.map((duration) => {
+                const score = bucketScores.find(s => s.duration_minutes === duration);
+                const hasData = !!score;
 
-                      <div className="flex items-center justify-between sm:justify-end gap-x-8 w-full sm:w-auto">
-                        <div className="text-right">
-                          <p className="text-xs text-muted-foreground uppercase tracking-wider">Correct/Total</p>
-                          <p className="font-mono font-medium">{score.correct_predictions}/{score.total_predictions}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs text-muted-foreground uppercase tracking-wider">Accuracy</p>
-                          <p className={`text-lg font-bold ${score.accuracy_percentage >= 50 ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
-                            {score.accuracy_percentage}%
-                          </p>
-                        </div>
+                return (
+                  <div
+                    key={duration}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 mb-2 sm:mb-0">
+                      <div className="bg-primary/10 text-primary font-bold px-3 py-1 rounded text-sm">
+                        {duration}m
                       </div>
+                      <span className="text-sm text-muted-foreground">Duration</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+
+                    <div className="flex items-center justify-between sm:justify-end gap-x-8 w-full sm:w-auto">
+                      {hasData ? (
+                        <>
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider">Correct/Total</p>
+                            <p className="font-mono font-medium">{score.correct_predictions}/{score.total_predictions}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider">Accuracy</p>
+                            <p className={`text-lg font-bold ${score.accuracy_percentage >= 50 ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
+                              {score.accuracy_percentage}%
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-right w-full sm:w-auto">
+                          <p className="text-sm text-muted-foreground italic">Insufficient data (minimum 10 predictions required)</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* My Predictions */}
       <Card>

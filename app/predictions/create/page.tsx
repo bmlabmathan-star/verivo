@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { supabase } from "@/lib/supabaseClient"
-import { CalendarIcon, TrendingUp, TrendingDown } from "lucide-react"
+import { TrendingUp, TrendingDown } from "lucide-react"
 
 export default function CreatePredictionPage() {
     const router = useRouter()
@@ -31,7 +31,6 @@ export default function CreatePredictionPage() {
     // Common
     const [direction, setDirection] = useState("")
     const [timeframe, setTimeframe] = useState("")
-    const [customDate, setCustomDate] = useState("")
     const [predictionStatement, setPredictionStatement] = useState("") // Free text input
 
     // --- Options ---
@@ -88,8 +87,7 @@ export default function CreatePredictionPage() {
         { label: "10 Minutes", value: "10m" },
         { label: "30 Minutes", value: "30m" },
         { label: "1 Hour", value: "1h" },
-        { label: "End of Day", value: "eod" },
-        { label: "Custom Date", value: "custom" },
+        { label: "3 Hours", value: "3h" },
     ]
 
     const calculateTargetDate = (): string => {
@@ -104,12 +102,8 @@ export default function CreatePredictionPage() {
                 return new Date(now.getTime() + 30 * 60000).toISOString()
             case "1h":
                 return new Date(now.getTime() + 60 * 60000).toISOString()
-            case "eod":
-                const eod = new Date(now)
-                eod.setHours(23, 59, 59, 999)
-                return eod.toISOString()
-            case "custom":
-                return customDate ? new Date(customDate).toISOString() : ""
+            case "3h":
+                return new Date(now.getTime() + 180 * 60000).toISOString()
             default:
                 return ""
         }
@@ -141,7 +135,6 @@ export default function CreatePredictionPage() {
             if (!marketType) throw new Error("Please select a Market Type")
             if (!direction) throw new Error("Please select a Direction")
             if (!timeframe) throw new Error("Please select a Timeframe")
-            if (timeframe === "custom" && !customDate) throw new Error("Please select a valid date")
 
             // 3. Prepare Data
             const finalTargetDate = calculateTargetDate()
@@ -182,6 +175,7 @@ export default function CreatePredictionPage() {
             else if (timeframe === '10m') durationMins = 10
             else if (timeframe === '30m') durationMins = 30
             else if (timeframe === '1h') durationMins = 60
+            else if (timeframe === '3h') durationMins = 180
 
             // 4. Send to API Route
             const response = await fetch('/api/create-prediction', {
@@ -414,11 +408,11 @@ export default function CreatePredictionPage() {
                         {/* 4. Timeframe (Common) */}
                         <div className="space-y-3">
                             <Label className="text-gray-200 text-base">
-                                {marketType ? "4." : "3."} Prediction Timeframe
+                                {marketType ? "4." : "3."} Lock-in Duration
                             </Label>
                             <Select value={timeframe} onValueChange={setTimeframe}>
                                 <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                                    <SelectValue placeholder="Select Duration" />
+                                    <SelectValue placeholder="Select Lock-in Duration" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {timeframes.map((t) => (
@@ -426,21 +420,6 @@ export default function CreatePredictionPage() {
                                     ))}
                                 </SelectContent>
                             </Select>
-
-                            {timeframe === "custom" && (
-                                <div className="pt-2 animate-in fade-in">
-                                    <Label className="text-sm text-gray-400 mb-1 block">Pick Date</Label>
-                                    <div className="relative">
-                                        <Input
-                                            type="date"
-                                            value={customDate}
-                                            onChange={(e) => setCustomDate(e.target.value)}
-                                            className="bg-white/5 border-white/10 text-white color-scheme-dark pl-10"
-                                        />
-                                        <CalendarIcon className="absolute left-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
-                                    </div>
-                                </div>
-                            )}
                         </div>
 
                         {/* 5. Optional Statement */}
