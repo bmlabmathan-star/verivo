@@ -198,13 +198,36 @@ export default async function DashboardPage() {
             </p>
           ) : (
             <div className="space-y-4">
-              {predictions.map((prediction) => (
-                <PredictionCard
-                  key={prediction.id}
-                  prediction={prediction as any}
-                  showFull={prediction.is_revealed || !!prediction.outcome}
-                />
-              ))}
+              {predictions.map((prediction) => {
+                const formatTime = (d: string) => {
+                  try {
+                    const date = new Date(d)
+                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+                    return `${date.getUTCHours().toString().padStart(2, '0')}:${date.getUTCMinutes().toString().padStart(2, '0')} • ${date.getUTCDate()} ${months[date.getUTCMonth()]} (UTC)`
+                  } catch (e) { return "—" }
+                }
+
+                return (
+                  <div key={prediction.id} className="space-y-2">
+                    <PredictionCard
+                      prediction={prediction as any}
+                      showFull={prediction.is_revealed || !!prediction.outcome}
+                    />
+                    <div className="flex flex-col items-end gap-1 px-1">
+                      <div className="text-xs text-white/70 font-mono bg-white/5 px-2 py-1 rounded border border-white/5">
+                        <span className="text-white/40 mr-2">LOCKED</span>
+                        {formatTime(prediction.created_at)}
+                      </div>
+                      {prediction.evaluation_time && (
+                        <div className="text-xs text-green-400/90 font-mono bg-white/5 px-2 py-1 rounded border border-white/5">
+                          <span className="text-white/40 mr-2">EVALUATED</span>
+                          {formatTime(prediction.evaluation_time)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </CardContent>
