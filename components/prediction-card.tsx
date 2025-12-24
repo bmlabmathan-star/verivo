@@ -76,13 +76,18 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
 
   // Time Formatter
   const formatTimestamp = (dateString: string | null) => {
-    if (!dateString) return ""
-    const date = new Date(dateString)
-    const day = date.getUTCDate()
-    const month = date.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })
-    const hours = date.getUTCHours().toString().padStart(2, '0')
-    const minutes = date.getUTCMinutes().toString().padStart(2, '0')
-    return `${hours}:${minutes} • ${day} ${month} (UTC)`
+    if (!dateString) return "—"
+    try {
+      const date = new Date(dateString)
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+      const hours = date.getUTCHours().toString().padStart(2, '0')
+      const minutes = date.getUTCMinutes().toString().padStart(2, '0')
+      const day = date.getUTCDate()
+      const month = months[date.getUTCMonth()]
+      return `${hours}:${minutes} • ${day} ${month} (UTC)`
+    } catch (e) {
+      return "—"
+    }
   }
 
   const lockedAt = formatTimestamp(prediction.created_at)
@@ -149,10 +154,10 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
         </div>
 
         {/* Timestamps */}
-        <div className="pt-3 border-t border-white/10 flex flex-col gap-1 text-[11px] text-white/50 text-right font-medium">
-          <div>Locked at {lockedAt || "—"}</div>
+        <div className="pt-3 border-t border-white/10 flex flex-col gap-1 text-xs text-white/70 text-right font-medium">
+          <div>Locked: {lockedAt}</div>
           <div>
-            {evaluatedAt ? `Evaluated at ${evaluatedAt}` : "Evaluation pending"}
+            {evaluatedAt ? `Evaluated: ${evaluatedAt}` : "Evaluation pending"}
           </div>
         </div>
       </CardContent>
