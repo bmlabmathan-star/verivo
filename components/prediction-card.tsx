@@ -1,17 +1,17 @@
 import Link from "next/link"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatDateTime } from "@/lib/utils"
 import { Database } from "@/types/database.types"
+import { TrendingUp, TrendingDown, Clock, Activity, CheckCircle2, XCircle, AlertCircle } from "lucide-react"
 
 type Prediction = Database['public']['Tables']['predictions']['Row'] & {
-  // Joined fields from legacy/full query
   experts?: { name: string; username: string } | null
   validations?: Array<{
     actual_value: number | null
     is_correct: boolean | null
     validated_at: string
   }> | null
+  duration_minutes?: number | null
 }
 
 interface PredictionCardProps {
@@ -19,175 +19,122 @@ interface PredictionCardProps {
   showFull?: boolean
 }
 
-export function PredictionCard({ prediction, showFull = false }: PredictionCardProps) {
-  // Determine if we should show the full details
-  // Legacy: is_revealed is true.
-  // New: outcome is set (automated validation).
-  const isRevealed = prediction.is_revealed || !!prediction.outcome
-  const isLocked = !isRevealed
-
-  // Validation Data Source: New (outcome) vs Old (validations table)
+export function PredictionCard({ prediction }: PredictionCardProps) {
+  // Parsing State
   const outcomeText = prediction.outcome || (prediction.validations?.[0]?.is_correct === true ? 'Correct' : prediction.validations?.[0]?.is_correct === false ? 'Incorrect' : null)
-  const finalPrice = prediction.final_price ?? prediction.validations?.[0]?.actual_value
-  const evalTime = prediction.evaluation_time ?? prediction.validations?.[0]?.validated_at
+  const isPending = !outcomeText
 
-  const eventCloseTime = new Date(prediction.event_close_time || prediction.target_date || Date.now())
-  const displayTitle = prediction.title || prediction.asset_name || "Prediction"
+  // Prices
+  const refPrice = prediction.reference_price ? Number(prediction.reference_price).toFixed(2) : "—"
+  const finalPriceRaw = prediction.final_price ?? prediction.validations?.[0]?.actual_value
+  const finalPrice = finalPriceRaw ? Number(finalPriceRaw).toFixed(2) : "Pending"
 
-  const getDirectionIcon = (direction: string | null) => {
-    // Normalize string case
-    const d = direction?.toLowerCase()
-    switch (d) {
-      case 'up': return '📈'
-      case 'down': return '📉'
-      case 'neutral': return '➡️'
-      default: return '📊'
+  // Duration
+  const durationDisplay = prediction.duration_minutes
+    ? (prediction.duration_minutes >= 60 ? `${prediction.duration_minutes / 60}h` : `${prediction.duration_minutes}m`)
+    : prediction.timeframe || "—"
+
+  // Direction Logic
+  const isUp = prediction.direction?.toLowerCase() === 'up'
+  const isDown = prediction.direction?.toLowerCase() === 'down'
+
+  // Styles based on status
+  const getStatusBadge = () => {
+    if (outcomeText === 'Correct') {
+      return (
+        <div className="flex items-center gap-2 bg-green-500/20 text-green-400 px-3 py-1.5 rounded-full border border-green-500/30">
+          <CheckCircle2 className="w-4 h-4" />
+          <span className="text-sm font-bold uppercase tracking-wider">Correct</span>
+        </div>
+      )
     }
+    if (outcomeText === 'Incorrect') {
+      return (
+        <div className="flex items-center gap-2 bg-red-500/20 text-red-400 px-3 py-1.5 rounded-full border border-red-500/30">
+          <XCircle className="w-4 h-4" />
+          <span className="text-sm font-bold uppercase tracking-wider">Incorrect</span>
+        </div>
+      )
+    }
+    return (
+      <div className="flex items-center gap-2 bg-yellow-500/20 text-yellow-400 px-3 py-1.5 rounded-full border border-yellow-500/30">
+        <Activity className="w-4 h-4 animate-pulse" />
+        <span className="text-sm font-bold uppercase tracking-wider">Pending Verification</span>
+      </div>
+    )
   }
 
-  const getDirectionColor = (direction: string | null) => {
-    const d = direction?.toLowerCase()
-    switch (d) {
-      case 'up': return 'text-green-600 bg-green-50 border-green-200'
-      case 'down': return 'text-red-600 bg-red-50 border-red-200'
-      case 'neutral': return 'text-gray-600 bg-gray-50 border-gray-200'
-      default: return 'text-gray-600 bg-gray-50 border-gray-200'
-    }
-  }
-
+  // Category Colors
   const categoryColors: Record<string, string> = {
-    equity: 'bg-blue-100 text-blue-800',
-    commodity: 'bg-yellow-100 text-yellow-800',
-    currency: 'bg-cyan-100 text-cyan-800',
-    crypto: 'bg-green-100 text-green-800',
-    Stocks: 'bg-blue-100 text-blue-800',
-    Global: 'bg-purple-100 text-purple-800',
-    Crypto: 'bg-green-100 text-green-800'
+    Stocks: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+    Crypto: 'bg-green-500/20 text-green-300 border-green-500/30',
+    Global: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+    Forex: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
+    Commodities: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
   }
 
-  // Determine Category Color
-  // Handle case sensitivity or new categories
-  const catKey = Object.keys(categoryColors).find(k => k.toLowerCase() === prediction.category.toLowerCase())
-  const catColor = catKey ? categoryColors[catKey] : 'bg-gray-100 text-gray-800'
+  const catColor = categoryColors[prediction.category || ''] || 'bg-white/10 text-white/60 border-white/10'
 
   return (
-    <Card className="glass-card card-hover border-white/10 overflow-hidden group">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="text-xl font-semibold mb-2 text-white">{displayTitle}</h3>
-            <div className="flex flex-wrap gap-2">
-              <span className={`badge ${catColor}`}>
-                {prediction.category}
+    <Card className={`glass-card border-white/10 overflow-hidden transition-all hover:border-white/20 hover:bg-white/5`}>
+      <CardHeader className="pb-3 border-b border-white/5">
+        <div className="flex justify-between items-start gap-4">
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold text-white leading-tight">
+              {prediction.asset_name || prediction.title || "Prediction Asset"}
+            </h3>
+            <div className="flex items-center gap-2 text-xs text-white/50">
+              <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold border ${catColor}`}>
+                {prediction.category || "General"}
               </span>
-
-              {/* Direction Badge */}
-              {isLocked && prediction.direction && (
-                <span className={`badge border ${getDirectionColor(prediction.direction)}`}>
-                  {getDirectionIcon(prediction.direction)} {prediction.direction.toUpperCase()}
-                </span>
-              )}
-
-              {/* Status Badge */}
-              {isLocked && (
-                <span className="badge badge-warning">🔒 Locked</span>
-              )}
-              {isRevealed && (
-                <span className={`badge ${outcomeText === 'Correct' ? 'badge-success' : outcomeText === 'Incorrect' ? 'badge-danger' : 'bg-gray-200 text-gray-800'}`}>
-                  {outcomeText === 'Correct' ? '✓ Correct' : outcomeText === 'Incorrect' ? '✗ Incorrect' : 'Pending / Void'}
-                </span>
-              )}
+              <span>•</span>
+              <span>{formatDateTime(prediction.created_at)}</span>
             </div>
           </div>
-
-          {prediction.experts && (
-            <Link
-              href={`/experts/${prediction.expert_id}`}
-              className="text-sm text-purple-600 hover:underline"
-            >
-              by {prediction.experts.name}
-            </Link>
-          )}
+          <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md border border-white/10">
+            <Clock className="w-3.5 h-3.5 text-white/60" />
+            <span className="text-xs font-medium text-white/80">{durationDisplay}</span>
+          </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {isLocked ? (
-          <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 text-center relative overflow-hidden">
-            {/* Locked UI */}
-            <div className="text-5xl mb-6 animate-pulse">🔒</div>
-            <p className="text-white/90 text-xl font-semibold mb-8">
-              Vault-Secured Prediction
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-left">
-              <div className="bg-black/20 p-4 rounded-xl border border-white/10">
-                <div className="text-xs font-bold text-white/50 uppercase mb-1 tracking-widest">Target Date</div>
-                <div className="text-lg font-bold text-white">{eventCloseTime.toLocaleString()}</div>
-              </div>
-              {prediction.reference_price && (
-                <div className="bg-black/20 p-4 rounded-xl border border-white/10">
-                  <div className="text-xs font-bold text-white/50 uppercase mb-1 tracking-widest">Entry Price</div>
-                  <div className="text-lg font-bold text-white gradient-text">{prediction.reference_price}</div>
-                </div>
-              )}
+
+      <CardContent className="pt-4 space-y-4">
+        {/* Core Prediction Details */}
+        <div className="flex items-stretch gap-4">
+          {/* Direction Box */}
+          <div className={`flex flex-col items-center justify-center p-3 rounded-xl border min-w-[80px] ${isUp ? 'bg-green-500/10 border-green-500/20 text-green-400' :
+            isDown ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+              'bg-white/5 border-white/10 text-white/60'
+            }`}>
+            {isUp ? <TrendingUp className="w-6 h-6 mb-1" /> :
+              isDown ? <TrendingDown className="w-6 h-6 mb-1" /> :
+                <AlertCircle className="w-6 h-6 mb-1" />}
+            <span className="text-xs font-bold uppercase">{prediction.direction || "Neutral"}</span>
+          </div>
+
+          {/* Price Metrics */}
+          <div className="grid grid-cols-2 flex-1 gap-2">
+            <div className="bg-black/20 rounded-xl p-3 border border-white/5">
+              <p className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-1">Ref Price</p>
+              <p className="text-lg font-mono font-medium text-white/90">{refPrice}</p>
+            </div>
+            <div className="bg-black/20 rounded-xl p-3 border border-white/5">
+              <p className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-1">Final Price</p>
+              <p className={`text-lg font-mono font-medium ${isPending ? 'text-white/50 italic text-sm pt-1' : 'text-white/90'}`}>
+                {finalPrice}
+              </p>
             </div>
           </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Unlocked / Revealed UI */}
+        </div>
 
-            {/* Logic for Title/Statement */}
-            {(prediction.prediction || prediction.title) && (
-              <div className="text-white/90 text-lg leading-relaxed p-6 bg-white/5 rounded-2xl border-l-8 border-purple-500 backdrop-blur-sm">
-                {prediction.prediction || prediction.title}
-              </div>
-            )}
+        {/* Footer actions / Status */}
+        <div className="flex items-center justify-between pt-2">
+          {getStatusBadge()}
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-
-              {/* Entry / Reference */}
-              <div className="bg-black/10 p-4 rounded-xl border border-white/5">
-                <div className="text-xs font-bold text-white/40 uppercase mb-1 tracking-widest">Entry Price</div>
-                <div className="text-white font-black text-xl">
-                  {prediction.reference_price ?? prediction.current_value ?? "—"}
-                </div>
-              </div>
-
-              {/* Target / Final */}
-              <div className="bg-black/10 p-4 rounded-xl border border-white/5">
-                <div className="text-xs font-bold text-white/40 uppercase mb-1 tracking-widest">
-                  {outcomeText ? "Final Price" : "Target / Current"}
-                </div>
-                <div className="text-white font-black text-xl">
-                  {finalPrice ?? prediction.target_value ?? "—"}
-                </div>
-              </div>
-
-              {/* Status Outcome */}
-              {outcomeText && (
-                <div className={`p-4 rounded-xl border ${outcomeText === 'Correct' ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
-                  <div className={`text-xs font-bold uppercase mb-1 tracking-widest ${outcomeText === 'Correct' ? 'text-green-400' : 'text-red-400'}`}>Outcome</div>
-                  <div className={`font-black text-xl ${outcomeText === 'Correct' ? 'text-green-400' : 'text-red-400'}`}>
-                    {outcomeText}
-                  </div>
-                </div>
-              )}
-
-              <div className="bg-black/10 p-4 rounded-xl border border-white/5">
-                <div className="text-xs font-bold text-white/40 uppercase mb-1 tracking-widest">Direction</div>
-                <div className="text-white font-semibold flex items-center gap-2">
-                  {getDirectionIcon(prediction.direction)}
-                  {prediction.direction?.toUpperCase()}
-                </div>
-              </div>
-
-            </div>
-          </div>
-        )}
-
-        <div className="mt-6 pt-4 border-t border-white/10 text-xs text-white/40 flex justify-between flex-wrap gap-2">
-          <span className="flex items-center gap-1">🕒 Created: {formatDateTime(prediction.created_at)}</span>
-          {evalTime && (
-            <span className="flex items-center gap-1">🏁 Evaluated: {formatDateTime(evalTime)}</span>
+          {prediction.experts && (
+            <Link href={`/experts/${prediction.experts.username || '#'}`} className="text-xs text-white/40 hover:text-white transition-colors">
+              by {prediction.experts.name}
+            </Link>
           )}
         </div>
       </CardContent>
