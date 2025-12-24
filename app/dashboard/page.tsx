@@ -217,58 +217,12 @@ export default async function DashboardPage() {
           ) : (
             <div className="space-y-4">
               {predictions.map((prediction) => {
-                const formatTime = (d: string) => {
-                  try {
-                    const date = new Date(d)
-                    const timeStr = new Intl.DateTimeFormat('en-GB', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      timeZone: 'Europe/London',
-                      hour12: false
-                    }).format(date)
-                    const dateStr = new Intl.DateTimeFormat('en-GB', {
-                      day: '2-digit',
-                      month: 'short',
-                      timeZone: 'Europe/London'
-                    }).format(date)
-                    return `${timeStr} • ${dateStr} (UK)`
-                  } catch (e) { return "—" }
-                }
-
-                const formatDuration = (mins: number | null | undefined) => {
-                  if (!mins) return ""
-                  if (mins >= 60) {
-                    const hours = Math.floor(mins / 60)
-                    return `${hours} hour${hours > 1 ? 's' : ''}`
-                  }
-                  return `${mins} min`
-                }
-
                 return (
                   <div key={prediction.id} className="space-y-2">
                     <PredictionCard
                       prediction={prediction as any}
                       showFull={prediction.is_revealed || !!prediction.outcome}
                     />
-                    <div className="flex flex-col items-end gap-1 px-1 mt-1">
-                      <div className="flex items-center gap-2">
-                        {prediction.duration_minutes && (
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300 bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.1)]">
-                            {formatDuration(prediction.duration_minutes)}
-                          </span>
-                        )}
-                        <div className="text-sm font-medium text-slate-300 font-mono bg-slate-950/50 px-2 py-1 rounded border border-slate-800/60">
-                          <span className="text-slate-500 mr-2 text-xs uppercase tracking-wider">Locked</span>
-                          {formatTime(prediction.created_at)}
-                        </div>
-                      </div>
-                      {prediction.evaluation_time && (
-                        <div className="text-sm font-medium text-green-300 font-mono bg-green-500/10 px-2 py-1 rounded border border-green-500/20">
-                          <span className="text-green-500/60 mr-2 text-xs uppercase tracking-wider">Evaluated</span>
-                          {formatTime(prediction.evaluation_time)}
-                        </div>
-                      )}
-                    </div>
                   </div>
                 )
               })}
