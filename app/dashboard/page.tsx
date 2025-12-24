@@ -61,8 +61,18 @@ export default async function DashboardPage() {
   const formatTime = (d: string) => {
     try {
       const date = new Date(d)
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-      return `${date.getUTCHours().toString().padStart(2, '0')}:${date.getUTCMinutes().toString().padStart(2, '0')} • ${date.getUTCDate()} ${months[date.getUTCMonth()]} (UTC)`
+      const timeStr = new Intl.DateTimeFormat('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Europe/London',
+        hour12: false
+      }).format(date)
+      const dateStr = new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        timeZone: 'Europe/London'
+      }).format(date)
+      return `${timeStr} • ${dateStr} (UK)`
     } catch (e) { return "—" }
   }
 
@@ -206,26 +216,62 @@ export default async function DashboardPage() {
             </p>
           ) : (
             <div className="space-y-4">
-              {predictions.map((prediction) => (
-                <div key={prediction.id} className="space-y-2">
-                  <PredictionCard
-                    prediction={prediction as any}
-                    showFull={prediction.is_revealed || !!prediction.outcome}
-                  />
-                  <div className="flex flex-col items-end gap-1 px-1">
-                    <div className="text-xs text-white/70 font-mono bg-white/5 px-2 py-1 rounded border border-white/5">
-                      <span className="text-white/40 mr-2">LOCKED</span>
-                      {formatTime(prediction.created_at)}
-                    </div>
-                    {prediction.evaluation_time && (
-                      <div className="text-xs text-green-400/90 font-mono bg-white/5 px-2 py-1 rounded border border-white/5">
-                        <span className="text-white/40 mr-2">EVALUATED</span>
-                        {formatTime(prediction.evaluation_time)}
+              {predictions.map((prediction) => {
+                const formatTime = (d: string) => {
+                  try {
+                    const date = new Date(d)
+                    const timeStr = new Intl.DateTimeFormat('en-GB', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      timeZone: 'Europe/London',
+                      hour12: false
+                    }).format(date)
+                    const dateStr = new Intl.DateTimeFormat('en-GB', {
+                      day: '2-digit',
+                      month: 'short',
+                      timeZone: 'Europe/London'
+                    }).format(date)
+                    return `${timeStr} • ${dateStr} (UK)`
+                  } catch (e) { return "—" }
+                }
+
+                const formatDuration = (mins: number | null | undefined) => {
+                  if (!mins) return ""
+                  if (mins >= 60) {
+                    const hours = Math.floor(mins / 60)
+                    return `${hours} hour${hours > 1 ? 's' : ''}`
+                  }
+                  return `${mins} min`
+                }
+
+                return (
+                  <div key={prediction.id} className="space-y-2">
+                    <PredictionCard
+                      prediction={prediction as any}
+                      showFull={prediction.is_revealed || !!prediction.outcome}
+                    />
+                    <div className="flex flex-col items-end gap-1 px-1">
+                      <div className="flex items-center gap-2">
+                        {prediction.duration_minutes && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                            {formatDuration(prediction.duration_minutes)}
+                          </span>
+                        )}
+                        <div className="text-xs text-white/70 font-mono bg-white/5 px-2 py-1 rounded border border-white/5">
+                          <span className="text-white/40 mr-2">LOCKED</span>
+                          {formatTime(prediction.created_at)}
+                        </div>
                       </div>
-                    )}
+                      {prediction.evaluation_time && (
+                        <div className="text-xs text-green-400/90 font-mono bg-white/5 px-2 py-1 rounded border border-white/5">
+                          <span className="text-white/40 mr-2">EVALUATED</span>
+                          {formatTime(prediction.evaluation_time)}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </CardContent>

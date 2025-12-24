@@ -79,12 +79,18 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
     if (!dateString) return "—"
     try {
       const date = new Date(dateString)
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-      const hours = date.getUTCHours().toString().padStart(2, '0')
-      const minutes = date.getUTCMinutes().toString().padStart(2, '0')
-      const day = date.getUTCDate()
-      const month = months[date.getUTCMonth()]
-      return `${hours}:${minutes} • ${day} ${month} (UTC)`
+      const timeStr = new Intl.DateTimeFormat('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Europe/London',
+        hour12: false
+      }).format(date)
+      const dateStr = new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        timeZone: 'Europe/London'
+      }).format(date)
+      return `${timeStr} • ${dateStr} (UK)`
     } catch (e) {
       return "—"
     }
@@ -155,13 +161,13 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
 
         {/* Timestamps */}
         <div className="pt-2 mt-2 border-t border-white/5">
-          <div className="bg-white/5 rounded-lg p-2 text-right">
-            <div className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-0.5">Timeline</div>
-            <div className="text-xs font-mono text-white/90">
-              <span className="text-white/50">Locked:</span> {lockedAt}
+          <div className="bg-blue-950/30 border border-blue-500/10 rounded-lg p-2 text-right">
+            <div className="text-[10px] uppercase tracking-widest text-blue-200/50 font-bold mb-1">Timeline</div>
+            <div className="text-sm font-medium font-mono text-blue-100">
+              <span className="text-blue-300/60 mr-1 text-xs uppercase">Locked:</span> {lockedAt}
             </div>
-            <div className="text-xs font-mono text-white/90">
-              <span className="text-white/50">Evaluated:</span> {evaluatedAt ? evaluatedAt : <span className="text-yellow-500/80 italic">Pending</span>}
+            <div className="text-sm font-medium font-mono text-blue-100">
+              <span className="text-blue-300/60 mr-1 text-xs uppercase">Evaluated:</span> {evaluatedAt ? evaluatedAt : <span className="text-yellow-500/80 italic text-xs">Pending</span>}
             </div>
           </div>
         </div>
