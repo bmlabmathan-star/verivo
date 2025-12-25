@@ -7,16 +7,18 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { PredictionCard } from "@/components/prediction-card"
 
-type CredibilityScore = {
+type VerivoScore = {
   user_id: string
-  duration_minutes: number | null
   total_predictions: number
   correct_predictions: number
-  accuracy_percentage: number
-  type: 'bucket' | 'overall'
+  raw_accuracy: number
+  weighted_accuracy: number
+  confidence_factor: number
+  credible_accuracy: number
+  verivo_score: number
 }
 
-const DURATION_BUCKETS = [5, 10, 30, 60]
+// NOTE: DURATION_BUCKETS legacy code removed as new view aggregates per user
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -28,52 +30,34 @@ export default async function DashboardPage() {
     redirect("/login")
   }
 
-  const expert = await getCurrentExpert()
+  // const expert = await getCurrentExpert() // unused for now? kept for consistency if needed later
   // Updated filter param from expert_id to userId to match new action signature
   const predictions = await getPredictions({ userId: user.id })
 
-  // Phase 4: Fetch credibility scores
-  const { data: credibilityData } = await supabase
-    .from('user_credibility_scores')
+  // Phase 4: Fetch Verivo Scores (New View)
+  const { data: verivoData } = await supabase
+    .from('user_verivo_scores')
     .select('*')
     .eq('user_id', user.id)
+    .single()
 
-  const scores = (credibilityData as unknown as CredibilityScore[]) || []
-  const overallScore = scores.find((s) => s.type === 'overall')
-  const bucketScores = scores
-    .filter((s) => s.type === 'bucket')
-    .sort((a, b) => (a.duration_minutes || 0) - (b.duration_minutes || 0))
+  const scores = verivoData as unknown as VerivoScore | null
 
-    .filter((s) => s.type === 'bucket')
-    .sort((a, b) => (a.duration_minutes || 0) - (b.duration_minutes || 0))
+  // No client-side calculation needed. Trust the server view.
 
-  const totalPredictionsCount = predictions.length
-  const correctPredictionsCount = predictions.filter((p: any) => p.outcome === 'Correct').length
-  const accuracyRate = overallScore?.accuracy_percentage || 0
+  // Format stats for display
+  // Credible Accuracy -> Accuracy % (User facing)
+  const accuracyAbs = scores?.credible_accuracy || 0
+  const accuracyPercentage = (accuracyAbs * 100).toFixed(1)
+
+  // Verivo Score -> Verivo Score
+  const verivoScoreDisplay = scores?.verivo_score?.toFixed(2) || "0.00"
 
   const stats = {
-    total_predictions: totalPredictionsCount,
-    correct_predictions: correctPredictionsCount,
-    accuracy_rate: accuracyRate,
-    verivo_score: accuracyRate,
-  }
-
-  const formatTime = (d: string) => {
-    try {
-      const date = new Date(d)
-      const timeStr = new Intl.DateTimeFormat('en-GB', {
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'Europe/London',
-        hour12: false
-      }).format(date)
-      const dateStr = new Intl.DateTimeFormat('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        timeZone: 'Europe/London'
-      }).format(date)
-      return `${timeStr} • ${dateStr} (UK)`
-    } catch (e) { return "—" }
+    total_predictions: scores?.total_predictions || 0,
+    correct_predictions: scores?.correct_predictions || 0,
+    accuracy_display: `${accuracyPercentage}%`,
+    verivo_score: verivoScoreDisplay,
   }
 
   return (
@@ -102,9 +86,9 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl">
-              {stats.accuracy_rate ? `${stats.accuracy_rate.toFixed(1)}%` : 'N/A'}
+              {stats.accuracy_display}
             </CardTitle>
-            <p className="text-sm text-muted-foreground">Accuracy Rate</p>
+            <p className="text-sm text-muted-foreground">Credible Accuracy</p>
           </CardHeader>
         </Card>
         <Card className="bg-gradient-to-br from-purple-500 to-purple-700 text-white">
@@ -112,36 +96,42 @@ export default async function DashboardPage() {
             <CardTitle className="text-2xl text-white">{stats.verivo_score}</CardTitle>
             <div className="space-y-1">
               <p className="text-sm text-white/80">Verivo Score</p>
-              <p className="text-xs text-white/60">Composite score based on verified accuracy and activity</p>
+              <p className="text-xs text-white/60">Composite score based on verified accuracy and difficulty</p>
             </div>
           </CardHeader>
         </Card>
       </div>
 
-      {/* Phase 4: Credibility Scores Display */}
+      {/* Performance Detail Card */}
       <Card className="mb-8">
         <CardHeader>
           <CardTitle>Your Credibility & Performance</CardTitle>
         </CardHeader>
         <CardContent>
-          {overallScore ? (
+          {scores ? (
             <div className="mb-8">
               <div className="mb-3">
                 <h3 className="text-lg font-semibold">Overall Performance</h3>
-                <p className="text-sm text-muted-foreground">Calculated from verified predictions</p>
+                <p className="text-sm text-muted-foreground">Calculated from verified predictions using Verivo Score v1.0</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-4 bg-secondary rounded-lg text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Accuracy</p>
-                  <p className="text-3xl font-bold text-primary">{overallScore.accuracy_percentage}%</p>
+                  <p className="text-sm text-muted-foreground mb-1">Credible Accuracy</p>
+                  <p className="text-3xl font-bold text-primary">{accuracyPercentage}%</p>
                 </div>
                 <div className="p-4 bg-secondary rounded-lg text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Total Predictions</p>
-                  <p className="text-2xl font-bold">{overallScore.total_predictions}</p>
+                  <p className="text-sm text-muted-foreground mb-1">Raw Accuracy (Win Rate)</p>
+                  {/* raw_accuracy is decimal, e.g. 0.85 -> 85% */}
+                  <p className="text-2xl font-bold text-muted-foreground">
+                    {scores.raw_accuracy ? (scores.raw_accuracy * 100).toFixed(1) + '%' : '0%'}
+                  </p>
                 </div>
                 <div className="p-4 bg-secondary rounded-lg text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Correct Predictions</p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{overallScore.correct_predictions}</p>
+                  <p className="text-sm text-muted-foreground mb-1">Confidence Factor</p>
+                  {/* confidence_factor is average weight e.g. 0.65 */}
+                  <p className="text-2xl font-bold text-muted-foreground">
+                    {scores.confidence_factor?.toFixed(2) || '0.00'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -156,51 +146,6 @@ export default async function DashboardPage() {
               </div>
             </div>
           )}
-
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Accuracy by Prediction Timeframe</h3>
-            <div className="space-y-3">
-              {DURATION_BUCKETS.map((duration) => {
-                const score = bucketScores.find(s => s.duration_minutes === duration);
-                const hasData = !!score;
-
-                return (
-                  <div
-                    key={duration}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                      <div className="bg-primary/10 text-primary font-bold px-3 py-1 rounded text-sm">
-                        {duration}m
-                      </div>
-                      <span className="text-sm text-muted-foreground">Duration</span>
-                    </div>
-
-                    <div className="flex items-center justify-between sm:justify-end gap-x-8 w-full sm:w-auto">
-                      {hasData ? (
-                        <>
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wider">Correct/Total</p>
-                            <p className="font-mono font-medium">{score.correct_predictions}/{score.total_predictions}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wider">Accuracy</p>
-                            <p className={`text-lg font-bold ${score.accuracy_percentage >= 50 ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
-                              {score.accuracy_percentage}%
-                            </p>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-right w-full sm:w-auto">
-                          <p className="text-sm text-muted-foreground italic">Insufficient data (minimum 10 predictions required)</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </CardContent>
       </Card>
 

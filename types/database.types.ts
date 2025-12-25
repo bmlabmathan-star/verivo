@@ -174,5 +174,19 @@ export interface Database {
         }
       }
     }
+    Views: {
+      user_verivo_scores: {
+        Row: {
+          user_id: string
+          total_predictions: number
+          correct_predictions: number
+          raw_accuracy: number
+          weighted_accuracy: number
+          confidence_factor: number
+          credible_accuracy: number
+          verivo_score: number
+        }
+      }
+    }
   }
 }
