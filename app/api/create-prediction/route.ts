@@ -110,7 +110,8 @@ export async function POST(request: Request) {
 
             if (existingPrediction) {
                 return NextResponse.json({
-                    error: "You already have an active prediction for this asset and timeframe. Please wait until it is evaluated."
+                    error: "You already have an active prediction for this asset and timeframe. Please wait until it is evaluated.",
+                    code: 'ACTIVE_PREDICTION_EXISTS'
                 }, { status: 400 })
             }
         }

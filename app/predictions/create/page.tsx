@@ -219,7 +219,16 @@ export default function CreatePredictionPage() {
             const result = await response.json()
 
             if (!response.ok) {
-                throw new Error(result.error || "Failed to create prediction")
+                // Handle duplicate prediction specifically
+                if (result.code === 'ACTIVE_PREDICTION_EXISTS') {
+                    setError("⚠️ DUPLICATE: " + (result.error || "You already have an active prediction for this asset."))
+                    // We could also set a specific flag to disable button if we wanted, 
+                    // but error message visibility is the main request.
+                    // The error state will be shown in the UI.
+                } else {
+                    throw new Error(result.error || "Failed to create prediction")
+                }
+                return // Stop execution
             }
 
             // 5. Redirect
