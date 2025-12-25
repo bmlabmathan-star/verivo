@@ -149,6 +149,81 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
+      {/* How Verivo Score Works */}
+      <Card className="mb-8 border-purple-500/20 bg-gradient-to-br from-purple-900/5 to-black/50">
+        <CardHeader>
+          <CardTitle>How Verivo Score Works</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <p className="text-muted-foreground leading-relaxed">
+              Verivo doesn't just measure if you are right or wrong—it measures how <strong>difficult</strong> your prediction was.
+              We operate on a simple principle: <span className="text-foreground font-medium">Longer timeframes require more skill and carry more weight.</span>
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Weight Table */}
+            <div>
+              <h4 className="text-sm font-semibold mb-3">Timeframe Weights</h4>
+              <div className="rounded-lg border overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr className="border-b">
+                      <th className="px-4 py-2 text-left font-medium">Duration</th>
+                      <th className="px-4 py-2 text-right font-medium">Weight Value</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    <tr>
+                      <td className="px-4 py-2">5 Minutes</td>
+                      <td className="px-4 py-2 text-right">0.1x</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2">10 Minutes</td>
+                      <td className="px-4 py-2 text-right">0.2x</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2">30 Minutes</td>
+                      <td className="px-4 py-2 text-right">0.5x</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2">1 Hour</td>
+                      <td className="px-4 py-2 text-right">0.8x</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2 font-medium text-purple-400">3 Hours+</td>
+                      <td className="px-4 py-2 text-right font-bold text-purple-400">1.0x</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Example */}
+            <div className="bg-muted/30 rounded-lg p-5 border border-dashed flex flex-col justify-center">
+              <h4 className="text-sm font-semibold mb-2">Why this matters</h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                Imagine two users calculate the same move:
+              </p>
+              <ul className="space-y-3 text-sm">
+                <li className="flex gap-2">
+                  <span className="bg-red-500/10 text-red-400 px-2 py-0.5 rounded text-xs font-mono h-fit">User A</span>
+                  <span className="text-muted-foreground">Predicts a 5-minute swing. Correct outcome gets <strong className="text-foreground">0.1 points</strong>.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="bg-green-500/10 text-green-400 px-2 py-0.5 rounded text-xs font-mono h-fit">User B</span>
+                  <span className="text-muted-foreground">Predicts a 3-hour trend. Correct outcome gets <strong className="text-foreground">1.0 point</strong>.</span>
+                </li>
+              </ul>
+              <p className="mt-4 text-xs text-muted-foreground italic border-t pt-3">
+                "User B is rewarded 10x more because sustaining accuracy over hours is significantly harder than minutes."
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* My Predictions */}
       <Card>
         <CardHeader>
