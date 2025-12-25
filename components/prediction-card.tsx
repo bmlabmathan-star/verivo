@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Database } from "@/types/database.types"
@@ -11,6 +14,7 @@ type Prediction = Database['public']['Tables']['predictions']['Row'] & {
     validated_at: string
   }> | null
   duration_minutes?: number | null
+  timeframe?: string | null // Add timeframe if missing in DB types but existing in usage
 }
 
 interface PredictionCardProps {
@@ -23,6 +27,66 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
   const outcomeText = prediction.outcome || (prediction.validations?.[0]?.is_correct === true ? 'Correct' : prediction.validations?.[0]?.is_correct === false ? 'Incorrect' : null)
   const isPending = !outcomeText
 
+  // Countdown State
+  const [countdown, setCountdown] = useState<string | null>(null)
+  const [isEvaluating, setIsEvaluating] = useState(false)
+  const [isUrgent, setIsUrgent] = useState(false)
+
+  useEffect(() => {
+    if (!isPending) {
+      setCountdown(null)
+      return
+    }
+
+    // Determine target time
+    // Priority: target_date > (reference_time + duration)
+    let targetTimeMs = 0
+    if (prediction.target_date) {
+      targetTimeMs = new Date(prediction.target_date).getTime()
+    } else if (prediction.reference_time && prediction.duration_minutes && prediction.duration_minutes > 0) {
+      targetTimeMs = new Date(prediction.reference_time).getTime() + (prediction.duration_minutes * 60000)
+    } else {
+      // Cannot calculate countdown (e.g. Opening prediction without target_date yet)
+      return
+    }
+
+    const timer = setInterval(() => {
+      const now = new Date().getTime()
+      const diff = targetTimeMs - now
+
+      if (diff <= 0) {
+        setIsEvaluating(true)
+        setCountdown(null)
+        // Ideally stop timer, but we keep checking in case target_date updates? 
+        // Actually, just clear interval if we consider it "done" until refresh.
+        // But prompt says: "When countdown reaches zero: Show ⏱ Evaluating…"
+        clearInterval(timer)
+      } else {
+        setIsEvaluating(false)
+        // Under 30s check
+        setIsUrgent(diff < 30000)
+
+        // Format MM:SS or HH:MM:SS
+        const hours = Math.floor((diff / (1000 * 60 * 60)))
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+        const mStr = minutes.toString().padStart(2, '0')
+        const sStr = seconds.toString().padStart(2, '0')
+
+        if (hours > 0) {
+          const hStr = hours.toString().padStart(2, '0')
+          setCountdown(`${hStr}:${mStr}:${sStr}`)
+        } else {
+          setCountdown(`${mStr}:${sStr}`)
+        }
+      }
+    }, 1000)
+
+    // Initial call
+    return () => clearInterval(timer)
+  }, [isPending, prediction.target_date, prediction.reference_time, prediction.duration_minutes])
+
   // Prices
   const refPrice = prediction.reference_price ? Number(prediction.reference_price).toFixed(2) : "—"
   const finalPriceRaw = prediction.final_price ?? prediction.validations?.[0]?.actual_value
@@ -31,7 +95,7 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
   // Duration
   const durationDisplay = prediction.duration_minutes
     ? (prediction.duration_minutes >= 60 ? `${prediction.duration_minutes / 60}h` : `${prediction.duration_minutes}m`)
-    : prediction.timeframe || "—"
+    : prediction.timeframe || "Until Open" // Fallback for Opening
 
   // Direction Logic
   const isUp = prediction.direction?.toLowerCase() === 'up'
@@ -55,6 +119,32 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
         </div>
       )
     }
+
+    // Pending State
+    if (isEvaluating) {
+      return (
+        <div className="flex items-center gap-2 bg-blue-500/20 text-blue-300 px-3 py-1.5 rounded-full border border-blue-500/30 animate-pulse">
+          <Clock className="w-4 h-4" />
+          <span className="text-sm font-bold uppercase tracking-wider">⏱ Evaluating…</span>
+        </div>
+      )
+    }
+
+    if (countdown) {
+      return (
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-colors ${isUrgent
+            ? 'bg-orange-500/20 text-orange-300 border-orange-500/30'
+            : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+          }`}>
+          <Activity className={`w-4 h-4 ${isUrgent ? 'animate-ping' : 'animate-pulse'}`} />
+          <span className="text-sm font-bold uppercase tracking-wider tabular-nums">
+            ⏳ Evaluates in {countdown}
+          </span>
+        </div>
+      )
+    }
+
+    // Default Pending (No countdown available)
     return (
       <div className="flex items-center gap-2 bg-yellow-500/20 text-yellow-400 px-3 py-1.5 rounded-full border border-yellow-500/30">
         <Activity className="w-4 h-4 animate-pulse" />
