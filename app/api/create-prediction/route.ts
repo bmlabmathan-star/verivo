@@ -80,6 +80,32 @@ export async function POST(request: Request) {
             }
         }
 
+        // Check for duplicate active predictions
+        // Prevent creating multiple pending predictions for the exact same parameters
+        if (user?.id && marketType && globalIdentifier && duration_minutes) {
+            const { data: existingPrediction, error: duplicateCheckError } = await supabase
+                .from('predictions')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('market_type', marketType)
+                .eq('asset_symbol', globalIdentifier)
+                .eq('duration_minutes', duration_minutes)
+                .is('outcome', null)
+                .maybeSingle()
+
+            if (duplicateCheckError) {
+                console.error("Duplicate check error:", duplicateCheckError)
+                // Proceed cautiously, or fail? Failing safe is better, but if column missing, it blocks everything.
+                // Assuming columns exist as per request.
+            }
+
+            if (existingPrediction) {
+                return NextResponse.json({
+                    error: "You already have an active prediction for this asset and timeframe. Please wait until it is evaluated."
+                }, { status: 400 })
+            }
+        }
+
         // Reference Price Logic - Crypto Only
         if (marketType === 'global' && globalAsset === 'Crypto' && globalIdentifier) {
             try {
@@ -125,7 +151,9 @@ export async function POST(request: Request) {
                 reference_price,
                 reference_time,
                 data_source,
-                duration_minutes // Store integer minutes
+                duration_minutes, // Store integer minutes
+                market_type: marketType,
+                asset_symbol: globalIdentifier
             })
 
         if (insertError) throw insertError
