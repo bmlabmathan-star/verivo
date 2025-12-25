@@ -506,6 +506,12 @@ export default function CreatePredictionPage() {
                             />
                         </div>
 
+                        {error && (
+                            <div className={`p-4 rounded-md border text-sm animate-in fade-in slide-in-from-top-2 ${error.includes('DUPLICATE') ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-200' : 'bg-red-500/10 border-red-500/20 text-red-300'}`}>
+                                {error}
+                            </div>
+                        )}
+
                         <div className="pt-4">
                             <Button
                                 type="submit"
