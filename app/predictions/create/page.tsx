@@ -119,7 +119,7 @@ export default function CreatePredictionPage() {
     const getGlobalPlaceholder = () => {
         switch (globalAsset) {
             case "Crypto": return "e.g. BTC, ETH, SOL"
-            case "Forex": return "e.g. EUR/USD, GBP/JPY"
+            case "Forex": return "e.g. EUR, GBP, JPY (Base Code)"
             case "Commodities": return "e.g. Gold, Crude Oil, Silver"
             default: return "e.g. Asset Name"
         }
@@ -412,7 +412,7 @@ export default function CreatePredictionPage() {
                                             setGlobalAsset(val)
                                             setGlobalIdentifier("")
                                             // Auto-Mode Logic
-                                            if (val === "Crypto") setPredictionMode("intraday")
+                                            if (val === "Crypto" || val === "Forex") setPredictionMode("intraday")
                                             else setPredictionMode("opening")
                                         }}
                                     >

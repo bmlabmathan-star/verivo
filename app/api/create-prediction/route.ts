@@ -116,10 +116,20 @@ export async function POST(request: Request) {
             }
         }
 
-        // Reference Price Logic - Crypto Only (Existing)
-        if (marketType === 'global' && globalAsset === 'Crypto' && globalIdentifier) {
+        // Reference Price Logic - Crypto & Forex
+        if (marketType === 'global' && (globalAsset === 'Crypto' || globalAsset === 'Forex') && globalIdentifier) {
             try {
-                const symbol = globalIdentifier.trim().toUpperCase().replace(/[^A-Z0-9]/g, '')
+                // Formatting: 
+                // Crypto: BTC -> BTC-USD
+                // Forex: EUR -> EUR-USD
+                let symbol = globalIdentifier.trim().toUpperCase().replace(/[^A-Z0-9]/g, '')
+
+                // Basic heuristic: for Forex, if user typed 'EURUSD' (6 chars), split? 
+                // Coinbase typically expects "BASE-QUOTE". 
+                // Let's assume user enters the base asset code (e.g. "EUR" or "BTC").
+                // If they enter 6 chars for Forex (e.g. EURUSD), we might need to handle, but standardizing on BASE-USD is safest for MVP.
+                // If we want to support non-USD pairs, it gets complex. Let's stick to X-USD.
+
                 const pair = `${symbol}-USD`
 
                 const response = await fetch(`https://api.coinbase.com/v2/prices/${pair}/spot`, {
@@ -137,7 +147,7 @@ export async function POST(request: Request) {
                     }
                 }
             } catch (e) {
-                console.error("Failed to fetch crypto price:", e)
+                console.error(`Failed to fetch ${globalAsset} price:`, e)
             }
         }
 

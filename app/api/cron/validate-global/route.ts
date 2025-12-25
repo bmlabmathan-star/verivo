@@ -7,30 +7,28 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
     try {
-        // Authenticate the cron job (Optional but recommended: check for a secret header)
+        // Authenticate the cron job (Optional)
         const authHeader = request.headers.get('Authorization')
         if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-            // For now, allowing open access for testing or simple setup, 
-            // but normally we'd return 401. 
             // return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         const supabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY! // Use service key to bypass RLS for admin tasks
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
         )
 
         const now = new Date().toISOString()
 
-        // 1. Query pending crypto predictions
-        // condition: category = 'Crypto', outcome IS NULL, target_date <= now
+        // 1. Query pending Global predictions (Crypto & Forex)
+        // condition: category IN ['Crypto', 'Forex'], outcome IS NULL, target_date <= now
         const { data: predictions, error: fetchError } = await supabase
             .from('predictions')
             .select('*')
-            .eq('category', 'Crypto')
+            .in('category', ['Crypto', 'Forex'])
             .is('outcome', null)
             .lte('target_date', now)
-            .limit(50) // Process in batches
+            .limit(50)
 
         if (fetchError) throw fetchError
 
@@ -43,35 +41,33 @@ export async function POST(request: Request) {
         // 2. Process each prediction
         for (const pred of predictions) {
             try {
-                // Ensure we have necessary data
-                // The title usually contains the identifier like "Crypto: BTC - Up..."
-                // But relying on title parsing is brittle.
-                // Ideally we should have stored 'asset_symbol' separately. 
-                // For now, we'll try to parse the title or re-use logic if we had stored it.
-                // Re-parsing logic from the creation format: "Crypto: [IDENTIFIER] - [Direction] ..."
+                // Determine Symbol
+                // Prefer explicitly stored 'asset_symbol' if available
+                let symbol = pred.asset_symbol
 
-                let symbol = ""
-                const titleParts = pred.title.split(':')
-                if (titleParts.length > 1) {
-                    const afterCategory = titleParts[1].trim() // "BTC - Up (1h)"
-                    const identifierParts = afterCategory.split(' - ')
-                    if (identifierParts.length > 0) {
-                        symbol = identifierParts[0].trim().toUpperCase() // "BTC"
+                // Backward compatibility: Parse from title if asset_symbol is missing
+                if (!symbol && pred.title) {
+                    const titleParts = pred.title.split(':')
+                    if (titleParts.length > 1) {
+                        const afterCategory = titleParts[1].trim()
+                        const identifierParts = afterCategory.split(' - ')
+                        if (identifierParts.length > 0) {
+                            symbol = identifierParts[0].trim().toUpperCase()
+                        }
                     }
                 }
 
-                // Fallback or skip if symbol invalid
                 if (!symbol) {
-                    console.log(`Skipping prediction ${pred.id}: Could not parse symbol from title '${pred.title}'`)
+                    console.log(`Skipping prediction ${pred.id}: Could not determine symbol`)
                     continue
                 }
 
                 // Clean symbol for API
-                // Assuming stored symbol is like "BTC", "ETH"
-                const cleanSymbol = symbol.replace(/[^A-Z0-9]/g, '')
+                // For Forex "EUR", and Crypto "BTC", we want "BASE-USD".
+                const cleanSymbol = symbol.trim().toUpperCase().replace(/[^A-Z0-9]/g, '')
                 const pair = `${cleanSymbol}-USD`
 
-                // 3. Fetch Final Price
+                // 3. Fetch Final Price (Coinbase supports both Crypto & Major Forex against USD)
                 const response = await fetch(`https://api.coinbase.com/v2/prices/${pair}/spot`, {
                     method: 'GET',
                     headers: { 'Accept': 'application/json' },
@@ -91,15 +87,9 @@ export async function POST(request: Request) {
                 }
 
                 // 4. Compare and Determine Outcome
-                // Logic:
-                // Up: Final > Reference
-                // Down: Final < Reference
-                // (Tie usually Void or Incorrect depending on strictness. Let's say Incorrect for now if exact match)
-
                 const refPrice = Number(pred.reference_price)
                 if (!refPrice) {
                     // Cannot evaluate without reference price
-                    // Maybe mark as 'Error' or 'Void'? For now, skip.
                     continue
                 }
 
@@ -123,7 +113,7 @@ export async function POST(request: Request) {
                     .eq('id', pred.id)
 
                 if (!updateError) {
-                    results.push({ id: pred.id, symbol, outcome, final_price })
+                    results.push({ id: pred.id, symbol: cleanSymbol, outcome, final_price })
                 }
 
             } catch (err) {
