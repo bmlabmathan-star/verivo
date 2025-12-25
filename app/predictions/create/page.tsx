@@ -177,7 +177,13 @@ export default function CreatePredictionPage() {
 
                 // Format: Category: Identifier - Direction (Timeframe)
                 // e.g. Crypto: BTC - Up (1 Hour)
-                autoTitle = `${globalAsset}: ${globalIdentifier.toUpperCase()} - ${direction} (${tfLabel})`
+                // Forex: EUR/USD - Up (5m)
+                let displayId = globalIdentifier.toUpperCase()
+                if (globalAsset === 'Forex' && !displayId.includes('/')) {
+                    displayId = `${displayId}/USD`
+                }
+
+                autoTitle = `${globalAsset}: ${displayId} - ${direction} (${tfLabel})`
             }
 
             const finalTitle = predictionStatement.trim() || autoTitle
@@ -436,6 +442,11 @@ export default function CreatePredictionPage() {
                                             onChange={(e) => setGlobalIdentifier(e.target.value)}
                                             className="bg-white/5 border-white/10 text-white placeholder:text-gray-600"
                                         />
+                                        {globalAsset === "Forex" && globalIdentifier.length >= 3 && (
+                                            <p className="text-xs text-blue-300/80 font-mono pl-1">
+                                                Base Pair: {globalIdentifier.substring(0, 3).toUpperCase()}/USD (Reference)
+                                            </p>
+                                        )}
                                     </div>
                                 )}
                             </div>

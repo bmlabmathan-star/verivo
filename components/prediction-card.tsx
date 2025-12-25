@@ -133,8 +133,8 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
     if (countdown) {
       return (
         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-colors ${isUrgent
-            ? 'bg-orange-500/20 text-orange-300 border-orange-500/30'
-            : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+          ? 'bg-orange-500/20 text-orange-300 border-orange-500/30'
+          : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
           }`}>
           <Activity className={`w-4 h-4 ${isUrgent ? 'animate-ping' : 'animate-pulse'}`} />
           <span className="text-sm font-bold uppercase tracking-wider tabular-nums">
@@ -238,6 +238,13 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
             </div>
           </div>
         </div>
+
+        {/* Forex Data Source Attribution */}
+        {prediction.category === 'Forex' && (
+          <div className="text-[10px] text-white/30 text-center font-mono -mt-2">
+            Data Reference: ECB via Frankfurter (USD base)
+          </div>
+        )}
 
         {/* Footer actions / Status */}
         <div className="flex items-center justify-between pt-2">
