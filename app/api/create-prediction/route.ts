@@ -116,38 +116,60 @@ export async function POST(request: Request) {
             }
         }
 
-        // Reference Price Logic - Crypto & Forex
-        if (marketType === 'global' && (globalAsset === 'Crypto' || globalAsset === 'Forex') && globalIdentifier) {
-            try {
-                // Formatting: 
-                // Crypto: BTC -> BTC-USD
-                // Forex: EUR -> EUR-USD
-                let symbol = globalIdentifier.trim().toUpperCase().replace(/[^A-Z0-9]/g, '')
+        // Reference Price Logic
+        if (marketType === 'global' && globalIdentifier) {
 
-                // Basic heuristic: for Forex, if user typed 'EURUSD' (6 chars), split? 
-                // Coinbase typically expects "BASE-QUOTE". 
-                // Let's assume user enters the base asset code (e.g. "EUR" or "BTC").
-                // If they enter 6 chars for Forex (e.g. EURUSD), we might need to handle, but standardizing on BASE-USD is safest for MVP.
-                // If we want to support non-USD pairs, it gets complex. Let's stick to X-USD.
+            // --- FOREX (Frankfurter) ---
+            if (globalAsset === 'Forex') {
+                try {
+                    // Logic: User enters 'EUR', 'GBP', etc.
+                    // Frankfurter expects ?from=EUR&to=USD
+                    // We assume valid 3-char code.
+                    let symbol = globalIdentifier.trim().toUpperCase().substring(0, 3)
 
-                const pair = `${symbol}-USD`
+                    // Fetch from Frankfurter
+                    const response = await fetch(`https://api.frankfurter.app/latest?from=${symbol}&to=USD`, {
+                        method: 'GET',
+                        cache: 'no-store'
+                    })
 
-                const response = await fetch(`https://api.coinbase.com/v2/prices/${pair}/spot`, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' },
-                    cache: 'no-store'
-                })
-
-                if (response.ok) {
-                    const data = await response.json()
-                    if (data?.data?.amount) {
-                        reference_price = parseFloat(data.data.amount)
-                        reference_time = new Date().toISOString() // refresh exact fetch time
-                        data_source = 'Coinbase'
+                    if (response.ok) {
+                        const data = await response.json()
+                        // data structure: { amount: 1.0, base: "EUR", date: "...", rates: { USD: 1.045 } }
+                        if (data?.rates?.USD) {
+                            reference_price = data.rates.USD
+                            reference_time = new Date().toISOString()
+                            data_source = 'Frankfurter'
+                        }
                     }
+                } catch (e) {
+                    console.error("Failed to fetch forex price:", e)
                 }
-            } catch (e) {
-                console.error(`Failed to fetch ${globalAsset} price:`, e)
+            }
+
+            // --- CRYPTO (Coinbase) ---
+            else if (globalAsset === 'Crypto') {
+                try {
+                    const symbol = globalIdentifier.trim().toUpperCase().replace(/[^A-Z0-9]/g, '')
+                    const pair = `${symbol}-USD`
+
+                    const response = await fetch(`https://api.coinbase.com/v2/prices/${pair}/spot`, {
+                        method: 'GET',
+                        headers: { 'Accept': 'application/json' },
+                        cache: 'no-store'
+                    })
+
+                    if (response.ok) {
+                        const data = await response.json()
+                        if (data?.data?.amount) {
+                            reference_price = parseFloat(data.data.amount)
+                            reference_time = new Date().toISOString() // refresh exact fetch time
+                            data_source = 'Coinbase'
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch crypto price:", e)
+                }
             }
         }
 
