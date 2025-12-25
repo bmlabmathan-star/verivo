@@ -247,46 +247,269 @@ export default function CreatePredictionPage() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-8">
+                        {/* 1. Market Type */}
+                        <div className="space-y-3">
+                            <Label className="text-gray-200 text-base">1. Select Market Type</Label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {marketTypes.map((type) => (
+                                    <div
+                                        key={type.id}
+                                        onClick={() => {
+                                            const newType = type.id as "stock" | "global"
+                                            setMarketType(newType)
+                                            setCountry("")
+                                            setExchange("")
+                                            setStockAssetType("")
+                                            setAssetName("")
+                                            setGlobalAsset("")
+                                            setGlobalIdentifier("")
 
-                        {/* 2. Prediction Mode (Only for Non-Crypto) */}
-                        {(marketType === "stock" || globalAsset !== "Crypto") && (
+                                            // Smart Defaults for Mode
+                                            // We don't know Global Asset yet, so we default to Opening for generic Global,
+                                            // BUT if user selects Crypto later, we switch.
+                                            // Actually, for "Global", we wait for category?
+                                            // Let's just set a safe default 'opening' for Stock, and 'intraday' for Global (assuming Crypto is popular) 
+                                            // OR per instructions: "If market_type === 'crypto'..." (Crypto is a global asset sub-selection).
+                                            // So we react to Global Asset change, not just Market Type.
+                                            // For now, reset to Intraday as safe default or maintain existing?
+                                            // Instruction: "Opening (default for equity...)"
+                                            if (newType === 'stock') setPredictionMode('opening')
+                                            else setPredictionMode('intraday')
+                                        }}
+                                        className={`cursor-pointer rounded-lg border p-4 transition-all hover:bg-white/5 ${marketType === type.id
+                                            ? "border-purple-500 bg-purple-500/10"
+                                            : "border-white/10"
+                                            }`}
+                                    >
+                                        <div className="font-semibold text-white">{type.label}</div>
+                                        <div className="text-xs text-gray-400">{type.desc}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 2. Prediction Mode (Visible & Required) */}
+                        {marketType && (
                             <div className="space-y-3 animate-in fade-in">
                                 <Label className="text-gray-200 text-base">2. Prediction Mode</Label>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div
-                                        onClick={() => {
-                                            setPredictionStatement("") // Reset statement on mode change
-                                            // Directly set mode logic here or via separate state?
-                                            // Let's assume we use a local var or new state if needed. 
-                                            // But for now, let's just use timeframe logic trick or new state.
-                                            // The simplest is to add a new state `predictionMode` at top. 
-                                            // But since we are replacing this block, I must assume `predictionMode` exists or I inject logic helper.
-                                            // Wait, I cannot add state hooks in this partial replace easily unless I replace the whole component start.
-                                            // I will replace the whole component start in a separate step or assume I can't.
-                                            // Actually, I should use `multi_replace` to add state first.
-                                            // BUT, this prompt is for `replace_file_content` of the FORM BODY.
-                                            // I will use `timeframe` as the proxy if I can, OR ideally I should have added state.
-                                            // Let's assume I will replace the whole file to be safe and clean.
-                                        }}
-                                        className="cursor-pointer..."
+                                        onClick={() => setPredictionMode("intraday")}
+                                        className={`cursor-pointer rounded-lg border p-4 transition-all hover:bg-white/5 ${predictionMode === "intraday"
+                                            ? "border-blue-400 bg-blue-500/10"
+                                            : "border-white/10"
+                                            }`}
                                     >
-                                        {/* ... */}
+                                        <div className="font-semibold text-white">Instant / Intraday</div>
+                                        <div className="text-xs text-gray-400">Lock in for a specific duration</div>
+                                    </div>
+                                    <div
+                                        onClick={() => setPredictionMode("opening")}
+                                        className={`cursor-pointer rounded-lg border p-4 transition-all hover:bg-white/5 ${predictionMode === "opening"
+                                            ? "border-yellow-400 bg-yellow-500/10"
+                                            : "border-white/10"
+                                            }`}
+                                    >
+                                        <div className="font-semibold text-white">Opening Prediction</div>
+                                        <div className="text-xs text-gray-400">Next Market Open Price</div>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {error && (
-                            <div className="text-red-400 text-sm bg-red-500/10 p-3 rounded-md border border-red-500/20">
-                                {error}
+                        {/* --- STOCK / INDEX PATH --- */}
+                        {marketType === "stock" && (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
+                                <div className="space-y-3">
+                                    <Label className="text-gray-200 text-base">Select Country</Label>
+                                    <Select
+                                        value={country}
+                                        onValueChange={(val) => {
+                                            setCountry(val)
+                                            setExchange("")
+                                        }}
+                                    >
+                                        <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                                            <SelectValue placeholder="Select Country" />
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-[300px]">
+                                            {priorityCountries.map(c => (
+                                                <SelectItem key={c} value={c} className="font-semibold text-purple-200">{c}</SelectItem>
+                                            ))}
+                                            <div className="h-px bg-white/10 my-1 mx-2" />
+                                            {otherCountries.map(c => (
+                                                <SelectItem key={c} value={c}>{c}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {country && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in">
+                                        <div className="space-y-3">
+                                            <Label className="text-gray-200 text-base">Exchange <span className="text-gray-500 text-xs font-normal">(Optional)</span></Label>
+                                            <Select value={exchange} onValueChange={setExchange}>
+                                                <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                                                    <SelectValue placeholder="Select Exchange" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {currentExchanges.map((ex) => (
+                                                        <SelectItem key={ex} value={ex}>{ex}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <Label className="text-gray-200 text-base">Asset Type</Label>
+                                            <Select
+                                                value={stockAssetType}
+                                                onValueChange={(val) => setStockAssetType(val as "Stock" | "Index")}
+                                            >
+                                                <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                                                    <SelectValue placeholder="Select Type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Stock">Stock</SelectItem>
+                                                    <SelectItem value="Index">Index</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {stockAssetType && (
+                                    <div className="space-y-3 animate-in fade-in">
+                                        <Label className="text-gray-200 text-base">Asset Name / Ticker</Label>
+                                        <Input
+                                            placeholder={stockAssetType === "Stock" ? "e.g. AAPL, Reliance, Tesla..." : "e.g. Nifty 50, S&P 500..."}
+                                            value={assetName}
+                                            onChange={(e) => setAssetName(e.target.value)}
+                                            className="bg-white/5 border-white/10 text-white placeholder:text-gray-600"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
+
+                        {/* --- GLOBAL PATH --- */}
+                        {marketType === "global" && (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
+                                <div className="space-y-3">
+                                    <Label className="text-gray-200 text-base">Select Global Asset Category</Label>
+                                    <Select
+                                        value={globalAsset}
+                                        onValueChange={(val) => {
+                                            setGlobalAsset(val)
+                                            setGlobalIdentifier("")
+                                            // Auto-Mode Logic
+                                            if (val === "Crypto") setPredictionMode("intraday")
+                                            else setPredictionMode("opening")
+                                        }}
+                                    >
+                                        <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                                            <SelectValue placeholder="Select Assessment Category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {globalAssets.map((a) => (
+                                                <SelectItem key={a} value={a}>{a}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {globalAsset && (
+                                    <div className="space-y-3 animate-in fade-in">
+                                        <Label className="text-gray-200 text-base">Asset Identifier</Label>
+                                        <Input
+                                            placeholder={getGlobalPlaceholder()}
+                                            value={globalIdentifier}
+                                            onChange={(e) => setGlobalIdentifier(e.target.value)}
+                                            className="bg-white/5 border-white/10 text-white placeholder:text-gray-600"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* 3. Direction (Common) */}
+                        <div className="space-y-3">
+                            <Label className="text-gray-200 text-base">
+                                Position / Direction
+                            </Label>
+                            <div className="grid grid-cols-2 gap-4">
+                                {directions.map((d) => (
+                                    <Button
+                                        key={d.value}
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => setDirection(d.value)}
+                                        className={`h-24 border-white/10 flex flex-col items-center justify-center gap-2 transition-all ${direction === d.value
+                                            ? `bg-white/10 border-white/30 text-white ring-1 ring-white/50 backdrop-blur-sm`
+                                            : "bg-transparent text-gray-400 hover:bg-white/5 hover:text-white"
+                                            }`}
+                                    >
+                                        <d.icon className={`h-8 w-8 ${direction === d.value ? d.color : "text-gray-500"}`} />
+                                        <span className="text-xl font-medium">{d.value}</span>
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 4. Timeframe (Only for Intraday) */}
+                        {predictionMode === 'intraday' && (
+                            <div className="space-y-3 animate-in fade-in">
+                                <Label className="text-gray-200 text-base">Lock-in Duration</Label>
+                                <Select value={timeframe} onValueChange={setTimeframe}>
+                                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                                        <SelectValue placeholder="Select Lock-in Duration" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {timeframes.map((t) => (
+                                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
+                        {/* Opening Mode info */}
+                        {predictionMode === 'opening' && (
+                            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                                <p className="text-sm text-blue-200 flex items-center gap-2">
+                                    <TrendingUp className="h-4 w-4" />
+                                    Prediction locked until next official market open.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* 5. Optional Statement */}
+                        <div className="space-y-3">
+                            <Label htmlFor="statement" className="text-gray-200 text-base">
+                                Prediction Statement <span className="text-gray-500 text-sm font-normal">(Optional)</span>
+                            </Label>
+                            <Input
+                                id="statement"
+                                placeholder="e.g. Breakout above resistance confirmed..."
+                                value={predictionStatement}
+                                onChange={(e) => setPredictionStatement(e.target.value)}
+                                className="bg-white/5 border-white/10 text-white placeholder:text-gray-600"
+                            />
+                        </div>
 
                         <div className="pt-4">
                             <Button
                                 type="submit"
                                 className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-6 text-lg transition-all hover:scale-[1.01]"
-                                disabled={loading || !marketType || !direction || !timeframe}
+                                disabled={
+                                    loading ||
+                                    !marketType ||
+                                    !direction ||
+                                    !predictionMode ||
+                                    (predictionMode === 'intraday' && !timeframe) ||
+                                    (marketType === 'stock' && (!country || !stockAssetType || !assetName)) ||
+                                    (marketType === 'global' && (!globalAsset || !globalIdentifier))
+                                }
                             >
                                 {loading ? "Creating..." : "Create Prediction"}
                             </Button>
