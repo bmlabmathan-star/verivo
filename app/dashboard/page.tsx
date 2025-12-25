@@ -192,6 +192,10 @@ export default async function DashboardPage() {
                       <td className="px-4 py-2 text-right">0.8x</td>
                     </tr>
                     <tr>
+                      <td className="px-4 py-2 text-blue-300">Opening Prediction</td>
+                      <td className="px-4 py-2 text-right font-semibold text-blue-300">0.9x</td>
+                    </tr>
+                    <tr>
                       <td className="px-4 py-2 font-medium text-purple-400">3 Hours+</td>
                       <td className="px-4 py-2 text-right font-bold text-purple-400">1.0x</td>
                     </tr>

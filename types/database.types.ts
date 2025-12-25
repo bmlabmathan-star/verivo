@@ -64,6 +64,7 @@ export interface Database {
           market_type: string | null
           asset_symbol: string | null
           duration_minutes: number | null
+          prediction_type: string | null
         }
         Insert: {
           id?: string
@@ -93,6 +94,7 @@ export interface Database {
           market_type?: string | null
           asset_symbol?: string | null
           duration_minutes?: number | null
+          prediction_type?: string | null
         }
         Update: {
           id?: string
@@ -122,6 +124,7 @@ export interface Database {
           market_type?: string | null
           asset_symbol?: string | null
           duration_minutes?: number | null
+          prediction_type?: string | null
         }
       }
       validations: {

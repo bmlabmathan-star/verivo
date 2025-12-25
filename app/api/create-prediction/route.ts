@@ -12,7 +12,8 @@ export async function POST(request: Request) {
             marketType,
             globalAsset,
             globalIdentifier,
-            timeframe // passed from frontend e.g. "5m", "1h"
+            timeframe, // passed from frontend e.g. "5m", "1h", or "opening"
+            prediction_type // "intraday" or "opening"
         } = body
 
         // Get Auth Token
@@ -43,24 +44,31 @@ export async function POST(request: Request) {
         let duration_minutes = 0
 
         // Parse Duration
-        // Prefer explicit duration_minutes from body if available (Fix for NULL bug)
-        if (body.duration_minutes !== undefined && body.duration_minutes !== null) {
-            duration_minutes = parseInt(body.duration_minutes)
+        if (prediction_type === 'opening') {
+            // Opening prediction logic
+            duration_minutes = 0 // Represents "Until Open" or special handling
+            // Target date is "Next Market Open". Difficult to precise without market schedule API.
+            // We can set a placeholder or leave null to be handled by Cron.
+            // For duplicate check, we rely on 'opening' type + symbol.
         } else {
-            // Fallback to timeframe mapping
-            if (timeframe === '5m') duration_minutes = 5
-            else if (timeframe === '10m') duration_minutes = 10
-            else if (timeframe === '30m') duration_minutes = 30
-            else if (timeframe === '1h') duration_minutes = 60
-            else {
-                // For 'eod' or 'custom', duration is variable. 
-                // We'll calculate it from user provided target_date if present
-                if (body.target_date) {
-                    const tDate = new Date(body.target_date)
-                    const now = new Date()
-                    const diffMs = tDate.getTime() - now.getTime()
-                    duration_minutes = Math.floor(diffMs / 60000)
-                    if (duration_minutes < 1) duration_minutes = 1 // Min 1 min
+            // Prefer explicit duration_minutes from body
+            if (body.duration_minutes !== undefined && body.duration_minutes !== null) {
+                duration_minutes = parseInt(body.duration_minutes)
+            } else {
+                // Fallback to timeframe mapping
+                if (timeframe === '5m') duration_minutes = 5
+                else if (timeframe === '10m') duration_minutes = 10
+                else if (timeframe === '30m') duration_minutes = 30
+                else if (timeframe === '1h') duration_minutes = 60
+                else if (timeframe === '3h') duration_minutes = 180
+                else {
+                    if (body.target_date) {
+                        const tDate = new Date(body.target_date)
+                        const now = new Date()
+                        const diffMs = tDate.getTime() - now.getTime()
+                        duration_minutes = Math.floor(diffMs / 60000)
+                        if (duration_minutes < 1) duration_minutes = 1
+                    }
                 }
             }
         }
@@ -71,8 +79,8 @@ export async function POST(request: Request) {
             const nowTime = new Date().getTime()
             const targetTime = nowTime + (duration_minutes * 60000)
             target_date = new Date(targetTime).toISOString()
-        } else {
-            // EOD or Custom fallback if duration was 0 or invalid
+        } else if (prediction_type !== 'opening') {
+            // EOD or Custom fallback if duration was 0 or invalid and not opening
             if (body.target_date) {
                 target_date = body.target_date
             } else {
@@ -81,23 +89,24 @@ export async function POST(request: Request) {
         }
 
         // Check for duplicate active predictions
-        // Prevent creating multiple pending predictions for the exact same parameters
-        if (user?.id && marketType && globalIdentifier && duration_minutes) {
-            const { data: existingPrediction, error: duplicateCheckError } = await supabase
+        if (user?.id && marketType && globalIdentifier) {
+            // For Opening: Check if one exists for same symbol
+            // For Intraday: Check if one exists for same symbol + duration
+            let query = supabase
                 .from('predictions')
                 .select('id')
                 .eq('user_id', user.id)
                 .eq('market_type', marketType)
                 .eq('asset_symbol', globalIdentifier)
-                .eq('duration_minutes', duration_minutes)
                 .is('outcome', null)
-                .maybeSingle()
 
-            if (duplicateCheckError) {
-                console.error("Duplicate check error:", duplicateCheckError)
-                // Proceed cautiously, or fail? Failing safe is better, but if column missing, it blocks everything.
-                // Assuming columns exist as per request.
+            if (prediction_type === 'opening') {
+                query = query.eq('prediction_type', 'opening')
+            } else {
+                query = query.eq('duration_minutes', duration_minutes)
             }
+
+            const { data: existingPrediction, error: duplicateCheckError } = await query.maybeSingle()
 
             if (existingPrediction) {
                 return NextResponse.json({
@@ -106,7 +115,7 @@ export async function POST(request: Request) {
             }
         }
 
-        // Reference Price Logic - Crypto Only
+        // Reference Price Logic - Crypto Only (Existing)
         if (marketType === 'global' && globalAsset === 'Crypto' && globalIdentifier) {
             try {
                 const symbol = globalIdentifier.trim().toUpperCase().replace(/[^A-Z0-9]/g, '')
@@ -131,8 +140,12 @@ export async function POST(request: Request) {
             }
         }
 
+        // For Opening Predictions (Non-Crypto), we ideally fetch "Previous Close".
+        // WITHOUT a stock API key in this context (e.g. AlphaVantage), we can't reliably fetch it now.
+        // We will leave reference_price as NULL for now, and let the Validator fill it if it has access,
+        // OR we assume the user accepts it will be filled later.
+
         // Recalculate target date precisely from reference_time if we successfully fetched price
-        // ensuring "Evaluation must occur only after: reference_time + (timeframe in minutes)"
         if (reference_price && duration_minutes > 0) {
             const refTimeMs = new Date(reference_time).getTime()
             target_date = new Date(refTimeMs + (duration_minutes * 60000)).toISOString()
@@ -151,9 +164,10 @@ export async function POST(request: Request) {
                 reference_price,
                 reference_time,
                 data_source,
-                duration_minutes, // Store integer minutes
+                duration_minutes: duration_minutes > 0 ? duration_minutes : null, // Store null for Opening (0)
                 market_type: marketType,
-                asset_symbol: globalIdentifier
+                asset_symbol: globalIdentifier,
+                prediction_type: prediction_type || 'intraday'
             })
 
         if (insertError) throw insertError

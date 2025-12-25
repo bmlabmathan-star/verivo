@@ -1,13 +1,22 @@
 -- Verivo Score v1.1 View Definition (Corrected Confidence Logic)
 -- This view calculates user performance metrics based on prediction history.
 
+-- 1. First, ensure the column exists (this MUST happen before the view references it)
+ALTER TABLE public.predictions 
+ADD COLUMN IF NOT EXISTS prediction_type text DEFAULT 'intraday';
+
+-- 2. Drop the old view to avoid conflict during replacement if schema changed significantly
+DROP VIEW IF EXISTS public.user_verivo_scores;
+
+-- 3. Create the updated view
 CREATE OR REPLACE VIEW public.user_verivo_scores AS
 WITH prediction_weights AS (
   SELECT
     user_id,
     outcome,
-    -- Assign weights based on duration tiers
+    -- Assign weights based on duration tiers and prediction type
     CASE
+      WHEN prediction_type = 'opening' THEN 0.9
       WHEN duration_minutes <= 5 THEN 0.1
       WHEN duration_minutes <= 10 THEN 0.2
       WHEN duration_minutes <= 30 THEN 0.5
