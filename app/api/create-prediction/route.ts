@@ -88,16 +88,45 @@ export async function POST(request: Request) {
             }
         }
 
+
+        // --- Generate Normalized Asset Key ---
+        let assetKey = ""
+
+        if (marketType === 'stock') {
+            // stock:country:symbol
+            // normalize: remove special chars? Or just trim/lower?
+            // "asset_key is always generated deterministically"
+            const c = (region || body.country || "").trim().toLowerCase()
+            const s = (globalIdentifier || body.assetName || "").trim().toLowerCase()
+            assetKey = `stock:${c}:${s}`
+        } else if (marketType === 'global') {
+            if (globalAsset === 'Crypto') {
+                const s = globalIdentifier.trim().toUpperCase().replace(/[^A-Z0-9]/g, '')
+                assetKey = `crypto:${s.toLowerCase()}`
+            } else if (globalAsset === 'Forex') {
+                const s = globalIdentifier.trim().toUpperCase().substring(0, 3)
+                assetKey = `forex:${s.toLowerCase()}_usd`
+            } else if (globalAsset === 'Commodities') {
+                let symbol = globalIdentifier.trim().toUpperCase()
+                if (symbol === 'GOLD' || symbol.includes('GOLD')) symbol = 'XAU'
+                else if (symbol === 'SILVER' || symbol.includes('SILVER')) symbol = 'XAG'
+                else if (['CRUDE', 'OIL', 'WTI'].some(s => symbol.includes(s))) symbol = 'WTI'
+                else if (['GAS', 'NATURAL', 'NG'].some(s => symbol.includes(s))) symbol = 'NG'
+
+                assetKey = `commodity:${symbol.toLowerCase()}`
+            } else {
+                assetKey = `global:${globalIdentifier.trim().toLowerCase()}`
+            }
+        }
+
         // Check for duplicate active predictions
-        if (user?.id && marketType && globalIdentifier) {
-            // For Opening: Check if one exists for same symbol
-            // For Intraday: Check if one exists for same symbol + duration
+        if (user?.id && assetKey) {
+            // Check based on asset_key uniqueness for active predictions
             let query = supabase
                 .from('predictions')
                 .select('id')
                 .eq('user_id', user.id)
-                .eq('market_type', marketType)
-                .eq('asset_symbol', globalIdentifier)
+                .eq('asset_key', assetKey)
                 .is('outcome', null)
 
             if (prediction_type === 'opening') {
@@ -290,6 +319,7 @@ export async function POST(request: Request) {
                 duration_minutes: duration_minutes > 0 ? duration_minutes : null, // Store null for Opening (0) if not calc
                 market_type: marketType,
                 asset_symbol: globalIdentifier,
+                asset_key: assetKey,
                 prediction_type: prediction_type || 'intraday'
             })
 
