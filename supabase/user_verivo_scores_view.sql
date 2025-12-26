@@ -16,7 +16,7 @@ WITH prediction_weights AS (
     outcome,
     -- Assign weights based on duration tiers and prediction type
     CASE
-      WHEN prediction_type = 'opening' THEN 0.9
+      WHEN prediction_type = 'opening' THEN 1.5
       WHEN duration_minutes <= 5 THEN 0.1
       WHEN duration_minutes <= 10 THEN 0.2
       WHEN duration_minutes <= 30 THEN 0.5

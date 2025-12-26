@@ -166,6 +166,27 @@ export default function CreatePredictionPage() {
                 }
             }
 
+            // Commodities Opening Validation (09:30 ET Cutoff)
+            if (globalAsset === 'Commodities' && predictionMode === 'opening') {
+                const now = new Date()
+                const usFmt = new Intl.DateTimeFormat('en-US', {
+                    timeZone: 'America/New_York',
+                    hour: 'numeric',
+                    minute: 'numeric',
+                    hour12: false
+                })
+                // formatToParts is safer but simple string is ok given consistent locale
+                // Actually formatToParts is better
+                const parts = usFmt.formatToParts(now)
+                const getP = (t: string) => parseInt(parts.find(p => p.type === t)?.value || '0')
+                const usHour = getP('hour')
+                const usMin = getP('minute')
+
+                if (usHour > 9 || (usHour === 9 && usMin >= 30)) {
+                    throw new Error("Commodities opening predictions must be placed before 09:30 ET (US Market Open).")
+                }
+            }
+
             let finalRegion = ""
             let autoTitle = ""
 
@@ -519,6 +540,11 @@ export default function CreatePredictionPage() {
                                 {globalAsset === 'Forex' && (
                                     <p className="text-xs text-blue-300/80 mt-1 pl-6">
                                         Opening price is based on London FX session (08:00 UK time).
+                                    </p>
+                                )}
+                                {globalAsset === 'Commodities' && (
+                                    <p className="text-xs text-blue-300/80 mt-1 pl-6">
+                                        Opening price is based on US Market Open (09:30 ET).
                                     </p>
                                 )}
                             </div>

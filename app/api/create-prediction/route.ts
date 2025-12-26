@@ -188,6 +188,55 @@ export async function POST(request: Request) {
                     console.error("Failed to fetch crypto price:", e)
                 }
             }
+
+            // --- COMMODITIES (US Market) ---
+            else if (globalAsset === 'Commodities') {
+                // Default handling for Gold
+                let symbol = globalIdentifier.trim().toUpperCase()
+                if (symbol === 'GOLD' || symbol.includes('GOLD')) symbol = 'XAU'
+
+                // Proxy Mapping for supported initially
+                let pair = ""
+                if (symbol === 'XAU') pair = "PAXG-USD"
+                else pair = `${symbol}-USD` // Fallback
+
+                if (prediction_type === 'opening') {
+                    // Opening Logic (US Market Open: 09:30 ET)
+                    try {
+                        const openingTime = getUSOpeningReference()
+                        reference_time = openingTime
+                        reference_price = null // Filled by validator
+                        data_source = 'US Market (COMEX/NYMEX)'
+
+                        if (duration_minutes > 0) {
+                            const opTime = new Date(openingTime).getTime()
+                            target_date = new Date(opTime + (duration_minutes * 60000)).toISOString()
+                        }
+                    } catch (e: any) {
+                        return NextResponse.json({ error: e.message }, { status: 400 })
+                    }
+                } else {
+                    // Intraday
+                    try {
+                        const response = await fetch(`https://api.coinbase.com/v2/prices/${pair}/spot`, {
+                            method: 'GET',
+                            headers: { 'Accept': 'application/json' },
+                            cache: 'no-store'
+                        })
+
+                        if (response.ok) {
+                            const data = await response.json()
+                            if (data?.data?.amount) {
+                                reference_price = parseFloat(data.data.amount)
+                                reference_time = new Date().toISOString()
+                                data_source = 'Coinbase (Proxy)'
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Failed to fetch commodity price:", e)
+                    }
+                }
+            }
         }
 
         // For Opening Predictions (Non-Crypto), we ideally fetch "Previous Close".
@@ -275,5 +324,61 @@ function getLondonOpeningReference() {
     }
     // If checkHour === 8, it matches (Winter/GMT).
 
+    return attempt.toISOString()
+}
+
+// Helper for US Market Time (09:30 ET)
+function getUSOpeningReference() {
+    // 1. Get Current US Time
+    const now = new Date()
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false
+    })
+
+    // Parse
+    const parts = formatter.formatToParts(now)
+    const getP = (t: string) => parseInt(parts.find(p => p.type === t)?.value || '0')
+    const uy = getP('year'), um = getP('month'), ud = getP('day'), uh = getP('hour'), umin = getP('minute')
+
+    // 2. Check Cutoff (Strictly before 09:30 ET)
+    // If hour > 9, OR (hour == 9 and min >= 30) -> Late
+    if (uh > 9 || (uh === 9 && umin >= 30)) {
+        throw new Error("Prediction window closed. US Opening predictions must be placed before 09:30 ET.")
+    }
+
+    // 3. Construct 09:30 ET in UTC
+    // We assume 09:30 ET.
+    // Base UTC construction on US date components, then adjust offset?
+    // Harder because we don't know the exact offset (EST=-5, EDT=-4) easily without library.
+    // TRICK: Create a Date object from the string "YYYY-MM-DD 09:30:00" in US time zone? 
+    // JS Date constructor is browser dependent or UTC.
+    // Better strategy:
+    // Create Date.UTC(uy, um-1, ud, 13, 30, 0) -- 13:30 is 09:30 EDT (-4).
+    // Check if that results in 09:30 ET. If it is 08:30 ET, then it was EST (-5), so add hour.
+
+    const attempt = new Date(Date.UTC(uy, um - 1, ud, 13, 30, 0)) // Try 13:30 UTC (09:30 EDT)
+
+    const checkFmt = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false
+    })
+    const checkStr = checkFmt.format(attempt) // e.g. "9:30" or "8:30"
+    const [ch, cm] = checkStr.split(':').map(Number)
+
+    if (ch === 8) {
+        // It was 08:30 ET, meaning offset is -5 (EST). We need 09:30.
+        // Add 1 hour.
+        attempt.setUTCHours(14)
+    }
+
+    // Now attempt is 09:30 ET.
     return attempt.toISOString()
 }
