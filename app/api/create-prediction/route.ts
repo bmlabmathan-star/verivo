@@ -121,29 +121,46 @@ export async function POST(request: Request) {
 
             // --- FOREX (Frankfurter) ---
             if (globalAsset === 'Forex') {
-                try {
-                    // Logic: User enters 'EUR', 'GBP', etc.
-                    // Frankfurter expects ?from=EUR&to=USD
-                    // We assume valid 3-char code.
-                    let symbol = globalIdentifier.trim().toUpperCase().substring(0, 3)
+                if (prediction_type === 'opening') {
+                    // Start of Day / Opening Logic
+                    try {
+                        const openingTime = getLondonOpeningReference()
+                        reference_time = openingTime
+                        reference_price = null // Will be filled by validator at 08:00
+                        data_source = 'Frankfurter (Delayed)'
 
-                    // Fetch from Frankfurter
-                    const response = await fetch(`https://api.frankfurter.app/latest?from=${symbol}&to=USD`, {
-                        method: 'GET',
-                        cache: 'no-store'
-                    })
-
-                    if (response.ok) {
-                        const data = await response.json()
-                        // data structure: { amount: 1.0, base: "EUR", date: "...", rates: { USD: 1.045 } }
-                        if (data?.rates?.USD) {
-                            reference_price = data.rates.USD
-                            reference_time = new Date().toISOString()
-                            data_source = 'Frankfurter'
+                        // If duration_minutes is set (e.g. user picked "1h" for "1h after open")
+                        // then we can set target_date now.
+                        if (duration_minutes > 0) {
+                            const opTime = new Date(openingTime).getTime()
+                            target_date = new Date(opTime + (duration_minutes * 60000)).toISOString()
                         }
+                    } catch (e: any) {
+                        return NextResponse.json({ error: e.message }, { status: 400 })
                     }
-                } catch (e) {
-                    console.error("Failed to fetch forex price:", e)
+                } else {
+                    // Intraday Logic (Existing)
+                    try {
+                        // Logic: User enters 'EUR', 'GBP', etc.
+                        let symbol = globalIdentifier.trim().toUpperCase().substring(0, 3)
+
+                        // Fetch from Frankfurter
+                        const response = await fetch(`https://api.frankfurter.app/latest?from=${symbol}&to=USD`, {
+                            method: 'GET',
+                            cache: 'no-store'
+                        })
+
+                        if (response.ok) {
+                            const data = await response.json()
+                            if (data?.rates?.USD) {
+                                reference_price = data.rates.USD
+                                reference_time = new Date().toISOString()
+                                data_source = 'Frankfurter'
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Failed to fetch forex price:", e)
+                    }
                 }
             }
 
@@ -197,7 +214,7 @@ export async function POST(request: Request) {
                 reference_price,
                 reference_time,
                 data_source,
-                duration_minutes: duration_minutes > 0 ? duration_minutes : null, // Store null for Opening (0)
+                duration_minutes: duration_minutes > 0 ? duration_minutes : null, // Store null for Opening (0) if not calc
                 market_type: marketType,
                 asset_symbol: globalIdentifier,
                 prediction_type: prediction_type || 'intraday'
@@ -211,4 +228,52 @@ export async function POST(request: Request) {
         console.error("Create Prediction Error:", error)
         return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 })
     }
+}
+
+// Helper for London Time Construction
+function getLondonOpeningReference() {
+    // 1. Get Current London Time
+    const now = new Date()
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/London',
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false
+    })
+
+    // Parse
+    const parts = formatter.formatToParts(now)
+    const getP = (t: string) => parseInt(parts.find(p => p.type === t)?.value || '0')
+    const ly = getP('year'), lm = getP('month'), ld = getP('day'), lh = getP('hour'), lmin = getP('minute')
+
+    // 2. Check Cutoff (Strictly before 08:00)
+    // If hour > 8, or (hour == 8 and min >= 0) -> Late.
+    // So if hour >= 8, it's late.
+    if (lh >= 8) {
+        throw new Error("Prediction window closed. Forex opening predictions must be placed before 08:00 UK time.")
+    }
+
+    // 3. Construct 08:00 London Time in UTC
+    // We assume 08:00 London. In Winter = 08:00 UTC. In Summer = 07:00 UTC.
+    // Construction Strategy: Create UTC date at 08:00, check London hour. Adjust.
+    const attempt = new Date(Date.UTC(ly, lm - 1, ld, 8, 0, 0))
+    // Check what time 'attempt' is in London
+    const checkFmt = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/London',
+        hour: 'numeric',
+        hour12: false
+    })
+    const checkHour = parseInt(checkFmt.format(attempt))
+
+    if (checkHour === 9) {
+        // It's BST (Summer), 08:00 UTC is 09:00 London.
+        // We want 08:00 London, so subtract 1 hour.
+        attempt.setUTCHours(7)
+    }
+    // If checkHour === 8, it matches (Winter/GMT).
+
+    return attempt.toISOString()
 }

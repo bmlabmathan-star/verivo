@@ -186,7 +186,7 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
     }
   }
 
-  const lockedAt = formatTimestamp(prediction.created_at)
+  const lockedAt = formatTimestamp(prediction.reference_time || prediction.created_at)
   const evaluatedAt = prediction.evaluation_time ? formatTimestamp(prediction.evaluation_time) : null
 
   return (

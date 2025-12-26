@@ -40,52 +40,70 @@ const scheduledTask = async (event: any, context: any) => {
                 const refTime = new Date(pred.reference_time).getTime();
                 const durationMs = pred.duration_minutes * 60000;
                 const unlockTime = refTime + durationMs;
+                const nowMs = now.getTime();
 
-                // Skip if not yet time to evaluate
-                if (now.getTime() < unlockTime) {
-                    continue;
-                }
-
-                // Determine Symbol
-                // Try from asset_symbol first, else parse title
+                // Determine Symbol (Common logic)
                 let symbol = pred.asset_symbol ? pred.asset_symbol.trim().toUpperCase() : "";
-
                 if (!symbol && pred.title) {
-                    // Fallback parse: "Forex: EUR - Up..."
                     const titleParts = pred.title.split(':');
                     if (titleParts.length > 1) {
                         const afterCategory = titleParts[1].trim();
-                        // "EUR - Up (5m)"
                         const identifierParts = afterCategory.split(' - ');
                         if (identifierParts.length > 0) {
                             symbol = identifierParts[0].trim().toUpperCase();
                         }
                     }
                 }
+                const base = (symbol && symbol.length >= 3) ? symbol.substring(0, 3) : "";
+                if (!base) continue;
 
-                // Extract Base Code (first 3 chars)
-                // e.g. "EUR" or "EURUSD" -> "EUR"
-                if (!symbol || symbol.length < 3) continue;
-                const base = symbol.substring(0, 3);
+                // --- Case A: Populate Reference Price (for Opening Predictions) ---
+                if (!pred.reference_price) {
+                    // Only populate if we have reached the reference time (08:00 UK)
+                    if (nowMs >= refTime) {
+                        // Fetch Open Price
+                        try {
+                            const response = await fetch(`https://api.frankfurter.app/latest?from=${base}&to=USD`, { method: 'GET', keepalive: true });
+                            if (response.ok) {
+                                const priceData = await response.json();
+                                const currentPrice = priceData?.rates?.USD;
+                                if (currentPrice) {
+                                    // Update DB
+                                    await supabase.from('predictions').update({ reference_price: currentPrice }).eq('id', pred.id);
+                                    console.log(`Set Opening Price for ${pred.id} (${base}): ${currentPrice}`);
 
-                // Fetch Price from Frankfurter
-                // URL: https://api.frankfurter.app/latest?from=EUR&to=USD
+                                    // Update local object to allow evaluation in same tick if ready
+                                    pred.reference_price = currentPrice;
+                                }
+                            }
+                        } catch (e) {
+                            console.error(`Failed to set opening price for ${pred.id}`, e);
+                        }
+                    } else {
+                        // Not yet time to set open price
+                        continue;
+                    }
+                }
+
+                // --- Case B: Evaluate Outcome ---
+                // Requires reference_price to be set
+                if (!pred.reference_price) continue;
+
+                // Check if duration has passed
+                if (nowMs < unlockTime) continue;
+
+                // Fetch Final Price
                 const response = await fetch(`https://api.frankfurter.app/latest?from=${base}&to=USD`, {
                     method: 'GET',
                     keepalive: true
                 });
 
-                if (!response.ok) {
-                    console.error(`Failed to fetch forex price for ${base}`);
-                    continue;
-                }
+                if (!response.ok) continue;
 
                 const priceData = await response.json();
-                // { amount: 1.0, base: "EUR", date: "...", rates: { USD: 1.045 } }
                 const final_price = priceData?.rates?.USD;
 
                 if (typeof final_price !== 'number' || isNaN(final_price)) continue;
-                if (!pred.reference_price) continue;
 
                 // Determine Outcome
                 let outcome = 'Incorrect';

@@ -150,6 +150,22 @@ export default function CreatePredictionPage() {
             // 3. Prepare Data
             const finalTargetDate = calculateTargetDate()
             let finalCategory = ""
+
+            // Forex Opening Validation (08:00 UK Cutoff)
+            if (globalAsset === 'Forex' && predictionMode === 'opening') {
+                const now = new Date()
+                const ukFmt = new Intl.DateTimeFormat('en-GB', {
+                    timeZone: 'Europe/London',
+                    hour: 'numeric',
+                    hour12: false
+                })
+                const ukHour = parseInt(ukFmt.format(now))
+                // Strict cutoff: 08:00 UK. If hour is 8 or more, it's too late.
+                if (ukHour >= 8) {
+                    throw new Error("Forex opening predictions must be placed before 08:00 UK time.")
+                }
+            }
+
             let finalRegion = ""
             let autoTitle = ""
 
@@ -500,6 +516,11 @@ export default function CreatePredictionPage() {
                                     <TrendingUp className="h-4 w-4" />
                                     Prediction locked until next official market open.
                                 </p>
+                                {globalAsset === 'Forex' && (
+                                    <p className="text-xs text-blue-300/80 mt-1 pl-6">
+                                        Opening price is based on London FX session (08:00 UK time).
+                                    </p>
+                                )}
                             </div>
                         )}
 
