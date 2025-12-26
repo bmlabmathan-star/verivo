@@ -62,47 +62,73 @@ const scheduledTask = async (event: any, context: any) => {
                 let symbol = pred.asset_symbol ? pred.asset_symbol.trim().toUpperCase() : "";
 
                 // Mappings
-                // Gold (XAU) -> PAXG-USD (Coinbase Proxy)
                 let pair = "";
+                let source = "coinbase"; // default
+                let yahooTicker = "";
+
                 if (symbol === 'XAU' || symbol === 'GOLD' || symbol.includes('GOLD')) {
                     pair = "PAXG-USD";
+                    source = "coinbase";
+                } else if (symbol === 'XAG' || symbol === 'SILVER' || symbol.includes('SILVER')) {
+                    pair = "XAG-USD";
+                    source = "coinbase";
+                } else if (['CRUDE', 'OIL', 'WTI'].some(s => symbol.includes(s)) || symbol === 'WTI') {
+                    yahooTicker = "CL=F";
+                    source = "yahoo";
+                } else if (['GAS', 'NATURAL', 'NG'].some(s => symbol.includes(s)) || symbol === 'NG') {
+                    yahooTicker = "NG=F";
+                    source = "yahoo";
                 } else {
-                    // For now only Gold/Silver supported initially?
-                    // Silver -> SLV? No standard crypto proxy.
-                    // We will stick to Gold as requested "incrementally starting with Gold".
-                    if (symbol !== 'XAU' && symbol !== 'GOLD') {
-                        // Attempt generic if user typed 'PAXG'
+                    // Fallback
+                    if (symbol.length === 3) {
                         pair = `${symbol}-USD`;
+                        source = "coinbase";
                     } else {
-                        continue; // Skip unsupported
+                        continue;
                     }
                 }
 
-                // --- Case A: Populate Reference Price (for Opening Predictions) ---
-                if (!pred.reference_price) {
-                    // Check if passed reference time (US Open)
-                    if (nowMs >= refTime) {
-                        // Fetch Open Price
+                // --- Helper Fetch Logic ---
+                const getPrice = async () => {
+                    if (source === 'coinbase') {
                         try {
-                            const response = await fetch(`https://api.coinbase.com/v2/prices/${pair}/spot`, {
-                                method: 'GET',
+                            const res = await fetch(`https://api.coinbase.com/v2/prices/${pair}/spot`, {
                                 headers: { 'Accept': 'application/json' },
                                 keepalive: true
                             });
-
-                            if (response.ok) {
-                                const data = await response.json();
-                                const currentPrice = parseFloat(data?.data?.amount);
-
-                                if (currentPrice) {
-                                    // Update DB
-                                    await supabase.from('predictions').update({ reference_price: currentPrice }).eq('id', pred.id);
-                                    console.log(`Set Opening Price for Comm ${pred.id} (${symbol}): ${currentPrice}`);
-                                    pred.reference_price = currentPrice;
-                                }
+                            if (res.ok) {
+                                const d = await res.json();
+                                return parseFloat(d?.data?.amount);
                             }
-                        } catch (e) {
-                            console.error(`Failed to set opening price for ${pred.id}`, e);
+                        } catch (e) { console.error("CB error", e); }
+                    } else if (source === 'yahoo') {
+                        // Yahoo Fetch
+                        try {
+                            const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooTicker}?interval=1m&range=1d`;
+                            const res = await fetch(url, {
+                                headers: {
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                                },
+                                keepalive: true
+                            });
+                            if (res.ok) {
+                                const d = await res.json();
+                                const meta = d?.chart?.result?.[0]?.meta;
+                                if (meta?.regularMarketPrice) return parseFloat(meta.regularMarketPrice);
+                            }
+                        } catch (e) { console.error("Yahoo error", e); }
+                    }
+                    return null;
+                };
+
+                // --- Case A: Populate Reference Price ---
+                if (!pred.reference_price) {
+                    if (nowMs >= refTime) {
+                        const currentPrice = await getPrice();
+                        if (currentPrice) {
+                            await supabase.from('predictions').update({ reference_price: currentPrice }).eq('id', pred.id);
+                            console.log(`Set Opening Price for Comm ${pred.id} (${symbol}): ${currentPrice}`);
+                            pred.reference_price = currentPrice;
                         }
                     } else {
                         continue;
@@ -114,16 +140,7 @@ const scheduledTask = async (event: any, context: any) => {
                 if (nowMs < unlockTime) continue;
 
                 // Fetch Final Price
-                const response = await fetch(`https://api.coinbase.com/v2/prices/${pair}/spot`, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' },
-                    keepalive: true
-                });
-
-                if (!response.ok) continue;
-
-                const data = await response.json();
-                const final_price = parseFloat(data?.data?.amount);
+                const final_price = await getPrice();
 
                 if (!final_price || isNaN(final_price)) continue;
 
@@ -164,3 +181,4 @@ const scheduledTask = async (event: any, context: any) => {
 };
 
 export const handler = schedule('* * * * *', scheduledTask);
+

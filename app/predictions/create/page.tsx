@@ -484,6 +484,18 @@ export default function CreatePredictionPage() {
                                                 Base Pair: {globalIdentifier.substring(0, 3).toUpperCase()}/USD (Reference)
                                             </p>
                                         )}
+                                        {globalAsset === "Commodities" && globalIdentifier.length >= 2 && (
+                                            <div className="text-xs text-blue-300/80 font-mono pl-1 flex flex-col gap-1">
+                                                <span>
+                                                    Market: {
+                                                        ['OIL', 'WTI', 'GAS', 'NG'].some(s => globalIdentifier.toUpperCase().includes(s))
+                                                            ? 'NYMEX (US)'
+                                                            : 'COMEX (US)'
+                                                    }
+                                                </span>
+                                                <span>Price Basis: Spot/Future (USD)</span>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

@@ -191,14 +191,12 @@ export async function POST(request: Request) {
 
             // --- COMMODITIES (US Market) ---
             else if (globalAsset === 'Commodities') {
-                // Default handling for Gold
+                // Symbol Normalization
                 let symbol = globalIdentifier.trim().toUpperCase()
                 if (symbol === 'GOLD' || symbol.includes('GOLD')) symbol = 'XAU'
-
-                // Proxy Mapping for supported initially
-                let pair = ""
-                if (symbol === 'XAU') pair = "PAXG-USD"
-                else pair = `${symbol}-USD` // Fallback
+                else if (symbol === 'SILVER' || symbol.includes('SILVER')) symbol = 'XAG'
+                else if (['CRUDE', 'OIL', 'WTI'].some(s => symbol.includes(s))) symbol = 'WTI'
+                else if (['GAS', 'NATURAL', 'NG'].some(s => symbol.includes(s))) symbol = 'NG'
 
                 if (prediction_type === 'opening') {
                     // Opening Logic (US Market Open: 09:30 ET)
@@ -206,7 +204,7 @@ export async function POST(request: Request) {
                         const openingTime = getUSOpeningReference()
                         reference_time = openingTime
                         reference_price = null // Filled by validator
-                        data_source = 'US Market (COMEX/NYMEX)'
+                        data_source = symbol === 'WTI' || symbol === 'NG' ? 'Yahoo Finance (NYMEX)' : 'US Market (COMEX)'
 
                         if (duration_minutes > 0) {
                             const opTime = new Date(openingTime).getTime()
@@ -218,22 +216,48 @@ export async function POST(request: Request) {
                 } else {
                     // Intraday
                     try {
-                        const response = await fetch(`https://api.coinbase.com/v2/prices/${pair}/spot`, {
-                            method: 'GET',
-                            headers: { 'Accept': 'application/json' },
-                            cache: 'no-store'
-                        })
+                        let price = null
+                        let source = ""
 
-                        if (response.ok) {
-                            const data = await response.json()
-                            if (data?.data?.amount) {
-                                reference_price = parseFloat(data.data.amount)
-                                reference_time = new Date().toISOString()
-                                data_source = 'Coinbase (Proxy)'
+                        if (symbol === 'XAU') {
+                            // Gold -> PAXG (Coinbase)
+                            const response = await fetch(`https://api.coinbase.com/v2/prices/PAXG-USD/spot`, { cache: 'no-store' })
+                            if (response.ok) {
+                                const data = await response.json()
+                                price = parseFloat(data?.data?.amount)
+                                source = 'Coinbase (PAXG Proxy)'
                             }
                         }
+                        else if (symbol === 'XAG') {
+                            // Silver -> XAG (Coinbase)
+                            const response = await fetch(`https://api.coinbase.com/v2/prices/XAG-USD/spot`, { cache: 'no-store' })
+                            if (response.ok) {
+                                const data = await response.json()
+                                price = parseFloat(data?.data?.amount)
+                                source = 'Coinbase (Spot)'
+                            }
+                        }
+                        else if (symbol === 'WTI') {
+                            // Crude Oil -> CL=F (Yahoo)
+                            price = await fetchYahooPrice('CL=F')
+                            source = 'Yahoo Finance (Future)'
+                        }
+                        else if (symbol === 'NG') {
+                            // Natural Gas -> NG=F (Yahoo)
+                            price = await fetchYahooPrice('NG=F')
+                            source = 'Yahoo Finance (Future)'
+                        }
+
+                        if (price !== null) {
+                            reference_price = price
+                            reference_time = new Date().toISOString()
+                            data_source = source
+                        } else {
+                            // Fallback generic check if user manually typed a detectable crypto
+                            // Not strictly required for WTI/NG but good safety
+                        }
                     } catch (e) {
-                        console.error("Failed to fetch commodity price:", e)
+                        console.error(`Failed to fetch commodity price for ${symbol}:`, e)
                     }
                 }
             }
@@ -381,4 +405,30 @@ function getUSOpeningReference() {
 
     // Now attempt is 09:30 ET.
     return attempt.toISOString()
+}
+
+// Helper for Yahoo Finance
+async function fetchYahooPrice(ticker: string): Promise<number | null> {
+    try {
+        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1m&range=1d`
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            },
+            cache: 'no-store'
+        })
+
+        if (!response.ok) return null
+
+        const data = await response.json()
+        const meta = data?.chart?.result?.[0]?.meta
+
+        if (meta?.regularMarketPrice) {
+            return parseFloat(meta.regularMarketPrice)
+        }
+        return null
+    } catch (e) {
+        console.error("Yahoo fetch error:", e)
+        return null
+    }
 }
