@@ -290,9 +290,8 @@ export default function CreatePredictionPage() {
                 // Handle duplicate prediction specifically
                 if (result.code === 'ACTIVE_PREDICTION_EXISTS') {
                     setError("⚠️ DUPLICATE: " + (result.error || "You already have an active prediction for this asset."))
-                    // We could also set a specific flag to disable button if we wanted, 
-                    // but error message visibility is the main request.
-                    // The error state will be shown in the UI.
+                } else if (result.code === 'MARKET_CLOSED') {
+                    setError(result.error || "Market is closed.")
                 } else {
                     throw new Error(result.error || "Failed to create prediction")
                 }
@@ -625,7 +624,10 @@ export default function CreatePredictionPage() {
                         </div>
 
                         {error && (
-                            <div className={`p-4 rounded-md border text-sm animate-in fade-in slide-in-from-top-2 ${error.includes('DUPLICATE') ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-200' : 'bg-red-500/10 border-red-500/20 text-red-300'}`}>
+                            <div className={`p-4 rounded-md border text-sm animate-in fade-in slide-in-from-top-2 ${error.includes('DUPLICATE') ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-200' :
+                                    error.includes('Market Closed') ? 'bg-orange-500/10 border-orange-500/20 text-orange-200' :
+                                        'bg-red-500/10 border-red-500/20 text-red-300'
+                                }`}>
                                 {error}
                             </div>
                         )}

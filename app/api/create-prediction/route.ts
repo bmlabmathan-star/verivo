@@ -296,6 +296,43 @@ export async function POST(request: Request) {
             }
         } else if (marketType === 'index' && globalIdentifier) {
             // --- INDICES (Yahoo Finance) ---
+
+            // Market Hours Validation: NYSE/NASDAQ (America/New_York)
+            // 09:30 - 16:00 ET
+            if (prediction_type !== 'opening') {
+                try {
+                    const now = new Date()
+                    const usFmt = new Intl.DateTimeFormat('en-US', {
+                        timeZone: 'America/New_York',
+                        hour: 'numeric',
+                        minute: 'numeric',
+                        hour12: false
+                    })
+                    const parts = usFmt.formatToParts(now)
+                    const getP = (t: string) => parseInt(parts.find(p => p.type === t)?.value || '0')
+                    const uh = getP('hour')
+                    const umin = getP('minute')
+
+                    // Market Open: 09:30. Market Close: 16:00.
+                    // Closed if: Hour < 9 OR (Hour == 9 && Min < 30) OR (Hour >= 16)
+                    const isBeforeOpen = uh < 9 || (uh === 9 && umin < 30)
+                    const isAfterClose = uh >= 16
+
+                    if (isBeforeOpen || isAfterClose) {
+                        return NextResponse.json({
+                            error: "⏰ Market Closed: Intraday predictions are disabled while the market is closed. Please use an Opening prediction.",
+                            code: 'MARKET_CLOSED'
+                        }, { status: 400 })
+                    }
+
+                } catch (e) {
+                    console.error("Time validation error:", e)
+                    // If time check fails, we might default to allow or block. 
+                    // Safe default is allow, but let's be strict if critical.
+                    // Proceeding to fetch if check fails.
+                }
+            }
+
             try {
                 const symbol = globalIdentifier.trim().toUpperCase()
                 const price = await fetchYahooPrice(symbol)
