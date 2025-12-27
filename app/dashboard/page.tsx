@@ -65,7 +65,7 @@ export default async function DashboardPage() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold text-white">Expert Dashboard</h1>
         <Link href="/predictions/create">
-          <Button>+ Create Prediction</Button>
+          <Button>+ Create Forecast</Button>
         </Link>
       </div>
 
@@ -74,13 +74,13 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl">{stats.total_predictions}</CardTitle>
-            <p className="text-sm text-muted-foreground">Predictions Made</p>
+            <p className="text-sm text-muted-foreground">Forecasts Made</p>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl">{stats.correct_predictions}</CardTitle>
-            <p className="text-sm text-muted-foreground">Correct Predictions</p>
+            <p className="text-sm text-muted-foreground">Correct Forecasts</p>
           </CardHeader>
         </Card>
         <Card>
@@ -112,7 +112,7 @@ export default async function DashboardPage() {
             <div className="mb-8">
               <div className="mb-3">
                 <h3 className="text-lg font-semibold">Overall Performance</h3>
-                <p className="text-sm text-muted-foreground">Calculated from verified predictions using Verivo Score v1.0</p>
+                <p className="text-sm text-muted-foreground">Calculated from verified forecasts using Verivo Score v1.0</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-4 bg-secondary rounded-lg text-center">
@@ -139,10 +139,10 @@ export default async function DashboardPage() {
             <div className="mb-8">
               <div className="mb-3">
                 <h3 className="text-lg font-semibold">Overall Performance</h3>
-                <p className="text-sm text-muted-foreground">Calculated from verified predictions</p>
+                <p className="text-sm text-muted-foreground">Calculated from verified forecasts</p>
               </div>
               <div className="p-4 bg-secondary/50 rounded-lg text-center border-dashed border-2">
-                <p className="text-sm text-muted-foreground">Insufficient data to calculate overall performance (minimum 10 predictions required)</p>
+                <p className="text-sm text-muted-foreground">Insufficient data to calculate overall performance (minimum 10 forecasts required)</p>
               </div>
             </div>
           )}
@@ -157,7 +157,7 @@ export default async function DashboardPage() {
         <CardContent className="space-y-6">
           <div>
             <p className="text-muted-foreground leading-relaxed">
-              Verivo doesn't just measure if you are right or wrong—it measures how <strong>difficult</strong> your prediction was.
+              Verivo doesn't just measure if you are right or wrong—it measures how <strong>difficult</strong> your forecast was.
               We operate on a simple principle: <span className="text-foreground font-medium">Longer timeframes require more skill and carry more weight.</span>
             </p>
           </div>
@@ -192,7 +192,7 @@ export default async function DashboardPage() {
                       <td className="px-4 py-2 text-right">0.8x</td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-2 text-blue-300">Opening Prediction</td>
+                      <td className="px-4 py-2 text-blue-300">Opening Forecast</td>
                       <td className="px-4 py-2 text-right font-semibold text-blue-300">0.9x</td>
                     </tr>
                     <tr>
@@ -228,15 +228,15 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* My Predictions */}
+      {/* My Forecasts */}
       <Card>
         <CardHeader>
-          <CardTitle>My Predictions</CardTitle>
+          <CardTitle>My Forecasts</CardTitle>
         </CardHeader>
         <CardContent>
           {predictions.length === 0 ? (
             <p className="text-center text-gray-500 py-8">
-              No predictions yet. Create your first prediction!
+              No forecasts yet. Create your first forecast!
             </p>
           ) : (
             <div className="space-y-4">

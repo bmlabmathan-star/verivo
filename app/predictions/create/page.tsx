@@ -145,7 +145,7 @@ export default function CreatePredictionPage() {
             const { data: { session } } = await supabase.auth.getSession()
 
             if (!session) {
-                throw new Error("You must be logged in to create a prediction")
+                throw new Error("You must be logged in to create a forecast")
             }
 
             // 2. Validate basic inputs
@@ -172,7 +172,7 @@ export default function CreatePredictionPage() {
                 const ukHour = parseInt(ukFmt.format(now))
                 // Strict cutoff: 08:00 UK. If hour is 8 or more, it's too late.
                 if (ukHour >= 8) {
-                    throw new Error("Forex opening predictions must be placed before 08:00 UK time.")
+                    throw new Error("Forex opening forecasts must be placed before 08:00 UK time.")
                 }
             }
 
@@ -193,7 +193,7 @@ export default function CreatePredictionPage() {
                 const usMin = getP('minute')
 
                 if (usHour > 9 || (usHour === 9 && usMin >= 30)) {
-                    throw new Error("Commodities opening predictions must be placed before 09:30 ET (US Market Open).")
+                    throw new Error("Commodities opening forecasts must be placed before 09:30 ET (US Market Open).")
                 }
             }
 
@@ -201,7 +201,7 @@ export default function CreatePredictionPage() {
             let autoTitle = ""
 
             const tfLabel = predictionMode === 'opening'
-                ? "Opening Prediction"
+                ? "Opening Forecast"
                 : (timeframes.find(t => t.value === timeframe)?.label || timeframe)
 
             if (marketType === "stock") {
@@ -289,11 +289,11 @@ export default function CreatePredictionPage() {
             if (!response.ok) {
                 // Handle duplicate prediction specifically
                 if (result.code === 'ACTIVE_PREDICTION_EXISTS') {
-                    setError("⚠️ DUPLICATE: " + (result.error || "You already have an active prediction for this asset."))
+                    setError("⚠️ DUPLICATE: " + (result.error || "You already have an active forecast for this asset."))
                 } else if (result.code === 'MARKET_CLOSED') {
                     setError(result.error || "Market is closed.")
                 } else {
-                    throw new Error(result.error || "Failed to create prediction")
+                    throw new Error(result.error || "Failed to create forecast")
                 }
                 return // Stop execution
             }
@@ -303,8 +303,8 @@ export default function CreatePredictionPage() {
             router.refresh()
 
         } catch (err: any) {
-            console.error("Error creating prediction:", err)
-            setError(err.message || "Failed to create prediction")
+            console.error("Error creating forecast:", err)
+            setError(err.message || "Failed to create forecast")
         } finally {
             setLoading(false)
         }
@@ -315,10 +315,10 @@ export default function CreatePredictionPage() {
             <Card className="border-white/10 glass-card">
                 <CardHeader>
                     <CardTitle className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
-                        Create Prediction
+                        Create Forecast
                     </CardTitle>
                     <CardDescription className="text-gray-400">
-                        Configure your prediction parameters.
+                        Configure your forecast parameters.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -365,10 +365,10 @@ export default function CreatePredictionPage() {
                             </div>
                         </div>
 
-                        {/* 2. Prediction Mode (Visible & Required) */}
+                        {/* 2. Forecast Mode (Visible & Required) */}
                         {marketType && (
                             <div className="space-y-3 animate-in fade-in">
-                                <Label className="text-gray-200 text-base">2. Prediction Mode</Label>
+                                <Label className="text-gray-200 text-base">2. Forecast Mode</Label>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div
                                         onClick={() => setPredictionMode("intraday")}
@@ -387,7 +387,7 @@ export default function CreatePredictionPage() {
                                             : "border-white/10"
                                             }`}
                                     >
-                                        <div className="font-semibold text-white">Opening Prediction</div>
+                                        <div className="font-semibold text-white">Opening Forecast</div>
                                         <div className="text-xs text-gray-400">Next Market Open Price</div>
                                     </div>
                                 </div>
@@ -594,7 +594,7 @@ export default function CreatePredictionPage() {
                             <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                                 <p className="text-sm text-blue-200 flex items-center gap-2">
                                     <TrendingUp className="h-4 w-4" />
-                                    Prediction locked until next official market open.
+                                    Forecast locked until next official market open.
                                 </p>
                                 {globalAsset === 'Forex' && (
                                     <p className="text-xs text-blue-300/80 mt-1 pl-6">
@@ -612,7 +612,7 @@ export default function CreatePredictionPage() {
                         {/* 5. Optional Statement */}
                         <div className="space-y-3">
                             <Label htmlFor="statement" className="text-gray-200 text-base">
-                                Prediction Statement <span className="text-gray-500 text-sm font-normal">(Optional)</span>
+                                Forecast Rationale <span className="text-gray-500 text-sm font-normal">(Optional)</span>
                             </Label>
                             <Input
                                 id="statement"
@@ -625,8 +625,8 @@ export default function CreatePredictionPage() {
 
                         {error && (
                             <div className={`p-4 rounded-md border text-sm animate-in fade-in slide-in-from-top-2 ${error.includes('DUPLICATE') ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-200' :
-                                    error.includes('Market Closed') ? 'bg-orange-500/10 border-orange-500/20 text-orange-200' :
-                                        'bg-red-500/10 border-red-500/20 text-red-300'
+                                error.includes('Market Closed') ? 'bg-orange-500/10 border-orange-500/20 text-orange-200' :
+                                    'bg-red-500/10 border-red-500/20 text-red-300'
                                 }`}>
                                 {error}
                             </div>
@@ -647,7 +647,7 @@ export default function CreatePredictionPage() {
                                     (marketType === 'global' && (!globalAsset || !globalIdentifier))
                                 }
                             >
-                                {loading ? "Creating..." : "Create Prediction"}
+                                {loading ? "Creating..." : "Create Forecast"}
                             </Button>
                         </div>
                     </form>

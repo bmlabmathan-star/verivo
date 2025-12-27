@@ -15,7 +15,7 @@ export function Footer() {
             <h4 className="font-semibold mb-4">Platform</h4>
             <ul className="space-y-2 text-sm">
               <li><Link href="/" className="text-gray-600 hover:text-purple-600">Home</Link></li>
-              <li><Link href="/predictions" className="text-gray-600 hover:text-purple-600">Predictions</Link></li>
+              <li><Link href="/predictions" className="text-gray-600 hover:text-purple-600">Forecasts</Link></li>
               <li><Link href="/feed" className="text-gray-600 hover:text-purple-600">Feed</Link></li>
               <li><Link href="/experts" className="text-gray-600 hover:text-purple-600">Experts</Link></li>
               <li><Link href="/leaderboard" className="text-gray-600 hover:text-purple-600">Leaderboard</Link></li>

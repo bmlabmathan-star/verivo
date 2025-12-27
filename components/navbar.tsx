@@ -41,7 +41,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: '/', label: 'Home' },
-    { href: '/predictions', label: 'Predictions' },
+    { href: '/predictions', label: 'Forecasts' },
     { href: '/feed', label: 'Feed' },
     { href: '/experts', label: 'Experts' },
     { href: '/leaderboard', label: 'Leaderboard' },
