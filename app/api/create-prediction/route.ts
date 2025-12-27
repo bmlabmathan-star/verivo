@@ -297,39 +297,88 @@ export async function POST(request: Request) {
         } else if (marketType === 'index' && globalIdentifier) {
             // --- INDICES (Yahoo Finance) ---
 
-            // Market Hours Validation: NYSE/NASDAQ (America/New_York)
-            // 09:30 - 16:00 ET
+            // Market Hours Validation (Index Specific)
             if (prediction_type !== 'opening') {
                 try {
-                    const now = new Date()
-                    const usFmt = new Intl.DateTimeFormat('en-US', {
-                        timeZone: 'America/New_York',
-                        hour: 'numeric',
-                        minute: 'numeric',
-                        hour12: false
-                    })
-                    const parts = usFmt.formatToParts(now)
-                    const getP = (t: string) => parseInt(parts.find(p => p.type === t)?.value || '0')
-                    const uh = getP('hour')
-                    const umin = getP('minute')
+                    const symbol = globalIdentifier.trim().toUpperCase()
 
-                    // Market Open: 09:30. Market Close: 16:00.
-                    // Closed if: Hour < 9 OR (Hour == 9 && Min < 30) OR (Hour >= 16)
-                    const isBeforeOpen = uh < 9 || (uh === 9 && umin < 30)
-                    const isAfterClose = uh >= 16
+                    const isIndexMarketOpen = (sym: string): { isOpen: boolean; reason?: string } => {
+                        const now = new Date()
 
-                    if (isBeforeOpen || isAfterClose) {
+                        // Helper to get parts in target timezone
+                        const getParts = (tz: string) => {
+                            const fmt = new Intl.DateTimeFormat('en-US', {
+                                timeZone: tz,
+                                hour: 'numeric',
+                                minute: 'numeric',
+                                weekday: 'short',
+                                hour12: false
+                            })
+                            const parts = fmt.formatToParts(now)
+                            const val = (t: string) => parts.find(p => p.type === t)?.value
+                            const h = parseInt(val('hour') || '0')
+                            const m = parseInt(val('minute') || '0')
+                            const w = val('weekday') // "Mon", "Tue"...
+                            return { h, m, w }
+                        }
+
+                        // Helper for general Mon-Fri check
+                        const isWeekend = (w: string | undefined) => w === 'Sat' || w === 'Sun'
+
+                        // 1. US Markets: NASDAQ (^NDX), S&P 500 (^GSPC)
+                        // Hours: 09:30 - 16:00 ET
+                        if (['^NDX', '^GSPC', 'US'].includes(sym) || (!['^FTSE', '^GDAXI', '^NSEI', '^NSEBANK'].includes(sym))) {
+                            const { h, m, w } = getParts('America/New_York')
+                            if (isWeekend(w)) return { isOpen: false, reason: "US markets are closed on weekends." }
+                            // Closed if before 09:30 or after 16:00
+                            if (h < 9 || (h === 9 && m < 30) || h >= 16) return { isOpen: false, reason: "US markets are currently closed (Hours: 09:30 - 16:00 ET)." }
+                            return { isOpen: true }
+                        }
+
+                        // 2. UK Market: FTSE 100 (^FTSE)
+                        // Hours: 08:00 - 16:30 London
+                        if (sym === '^FTSE') {
+                            const { h, m, w } = getParts('Europe/London')
+                            if (isWeekend(w)) return { isOpen: false, reason: "London market is closed on weekends." }
+                            if (h < 8 || (h === 16 && m >= 30) || h >= 17) return { isOpen: false, reason: "London market is currently closed (Hours: 08:00 - 16:30 UK)." }
+                            return { isOpen: true }
+                        }
+
+                        // 3. Germany: DAX 40 (^GDAXI)
+                        // Hours: 09:00 - 17:30 Berlin
+                        if (sym === '^GDAXI') {
+                            const { h, m, w } = getParts('Europe/Berlin')
+                            if (isWeekend(w)) return { isOpen: false, reason: "German market is closed on weekends." }
+                            if (h < 9 || (h === 17 && m >= 30) || h >= 18) return { isOpen: false, reason: "German market is currently closed (Hours: 09:00 - 17:30 CET)." }
+                            return { isOpen: true }
+                        }
+
+                        // 4. India: NIFTY 50 (^NSEI), BANK NIFTY (^NSEBANK)
+                        // Hours: 09:15 - 15:30 IST
+                        if (['^NSEI', '^NSEBANK'].includes(sym)) {
+                            const { h, m, w } = getParts('Asia/Kolkata')
+                            if (isWeekend(w)) return { isOpen: false, reason: "Indian markets are closed on weekends." }
+                            if (h < 9 || (h === 9 && m < 15) || (h === 15 && m >= 30) || h >= 16) return { isOpen: false, reason: "Indian markets are currently closed (Hours: 09:15 - 15:30 IST)." }
+                            return { isOpen: true }
+                        }
+
+                        // Fallback open (shouldn't happen with strict lists but safety)
+                        return { isOpen: true }
+                    }
+
+                    const check = isIndexMarketOpen(symbol)
+                    if (!check.isOpen) {
                         return NextResponse.json({
-                            error: "⏰ Market Closed: Intraday predictions are disabled while the market is closed. Please use an Opening prediction.",
+                            error: `⏰ Market Closed: ${check.reason} (Intraday forecasts disabled)`,
                             code: 'MARKET_CLOSED'
                         }, { status: 400 })
                     }
 
                 } catch (e) {
                     console.error("Time validation error:", e)
-                    // If time check fails, we might default to allow or block. 
-                    // Safe default is allow, but let's be strict if critical.
-                    // Proceeding to fetch if check fails.
+                    // If time validation fails unexpectedly, we log but maybe allow or block?
+                    // Blocking is safer for 'Verified' app.
+                    return NextResponse.json({ error: "Unable to validate market hours." }, { status: 500 })
                 }
             }
 
