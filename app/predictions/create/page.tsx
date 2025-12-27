@@ -16,7 +16,7 @@ export default function CreatePredictionPage() {
     const [error, setError] = useState("")
 
     // Structured State
-    const [marketType, setMarketType] = useState<"stock" | "global" | "">("")
+    const [marketType, setMarketType] = useState<"stock" | "global" | "index" | "">("")
     const [predictionMode, setPredictionMode] = useState<"intraday" | "opening">("intraday")
 
     // Stock Specifics
@@ -37,7 +37,8 @@ export default function CreatePredictionPage() {
     // --- Options ---
 
     const marketTypes = [
-        { id: "stock", label: "Stock / Index", desc: "Country specifics" },
+        { id: "stock", label: "Stock", desc: "Country specifics" },
+        { id: "index", label: "Indices", desc: "Market Benchmarks" },
         { id: "global", label: "Currency / Commodity / Crypto", desc: "Global assets" }
     ]
 
@@ -81,6 +82,15 @@ export default function CreatePredictionPage() {
     const directions = [
         { value: "Up", icon: TrendingUp, color: "text-green-500" },
         { value: "Down", icon: TrendingDown, color: "text-red-500" }
+    ]
+
+    const INDICES = [
+        { label: "S&P 500 (US)", value: "^GSPC" },
+        { label: "Nasdaq 100 (US)", value: "^NDX" },
+        { label: "FTSE 100 (UK)", value: "^FTSE" },
+        { label: "DAX 40 (EU)", value: "^GDAXI" },
+        { label: "NIFTY 50 (India)", value: "^NSEI" },
+        { label: "BANK NIFTY (India)", value: "^NSEBANK" },
     ]
 
     const timeframes = [
@@ -205,6 +215,21 @@ export default function CreatePredictionPage() {
                 const prefix = exchange && exchange !== "Other" ? `${exchange}: ` : ""
                 autoTitle = `${prefix}${assetName.toUpperCase()} - ${direction} (${tfLabel})`
 
+            } else if (marketType === "index") {
+                if (!globalIdentifier) throw new Error("Please select an Index")
+
+                finalCategory = "Indices"
+
+                // Derive Region
+                if (['^GSPC', '^NDX'].includes(globalIdentifier)) finalRegion = "USA"
+                else if (globalIdentifier === '^FTSE') finalRegion = "UK"
+                else if (globalIdentifier === '^GDAXI') finalRegion = "EU"
+                else if (globalIdentifier.includes('NSE')) finalRegion = "India"
+                else finalRegion = "Global"
+
+                const idxLabel = INDICES.find(i => i.value === globalIdentifier)?.label || globalIdentifier
+                autoTitle = `Index: ${idxLabel} - ${direction} (${tfLabel})`
+
             } else {
                 if (!globalAsset) throw new Error("Please select an Asset Category")
                 if (!globalIdentifier) throw new Error("Please enter the Asset Identifier")
@@ -326,6 +351,7 @@ export default function CreatePredictionPage() {
                                             // For now, reset to Intraday as safe default or maintain existing?
                                             // Instruction: "Opening (default for equity...)"
                                             if (newType === 'stock') setPredictionMode('opening')
+                                            else if (newType === 'index') setPredictionMode('intraday')
                                             else setPredictionMode('intraday')
                                         }}
                                         className={`cursor-pointer rounded-lg border p-4 transition-all hover:bg-white/5 ${marketType === type.id
@@ -441,6 +467,28 @@ export default function CreatePredictionPage() {
                                         />
                                     </div>
                                 )}
+                            </div>
+                        )}
+
+                        {/* --- INDICES PATH --- */}
+                        {marketType === "index" && (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
+                                <div className="space-y-3">
+                                    <Label className="text-gray-200 text-base">Select Index</Label>
+                                    <Select
+                                        value={globalIdentifier}
+                                        onValueChange={(val) => setGlobalIdentifier(val)}
+                                    >
+                                        <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                                            <SelectValue placeholder="Select Market Index" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {INDICES.map((idx) => (
+                                                <SelectItem key={idx.value} value={idx.value}>{idx.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         )}
 
@@ -593,6 +641,7 @@ export default function CreatePredictionPage() {
                                     !predictionMode ||
                                     (predictionMode === 'intraday' && !timeframe) ||
                                     (marketType === 'stock' && (!country || !stockAssetType || !assetName)) ||
+                                    (marketType === 'index' && !globalIdentifier) ||
                                     (marketType === 'global' && (!globalAsset || !globalIdentifier))
                                 }
                             >

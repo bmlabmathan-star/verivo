@@ -160,6 +160,7 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
     Global: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
     Forex: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
     Commodities: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
+    Indices: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
   }
 
   const catColor = categoryColors[prediction.category || ''] || 'bg-white/10 text-white/60 border-white/10'
@@ -243,6 +244,13 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
         {prediction.category === 'Forex' && (
           <div className="text-[10px] text-white/30 text-center font-mono -mt-2">
             Data Reference: ECB via Frankfurter (USD base)
+          </div>
+        )}
+
+        {/* Indices Data Source Attribution */}
+        {prediction.category === 'Indices' && (
+          <div className="text-[10px] text-white/30 text-center font-mono -mt-2">
+            Data Reference: Yahoo Finance (Delayed)
           </div>
         )}
 

@@ -99,6 +99,10 @@ export async function POST(request: Request) {
             const c = (region || body.country || "").trim().toLowerCase()
             const s = (globalIdentifier || body.assetName || "").trim().toLowerCase()
             assetKey = `stock:${c}:${s}`
+        } else if (marketType === 'index') {
+            const s = globalIdentifier.trim().toLowerCase()
+            assetKey = `index:${s}`
+            // We set globalAsset for consistency in checks involving 'category'
         } else if (marketType === 'global') {
             if (globalAsset === 'Crypto') {
                 const s = globalIdentifier.trim().toUpperCase().replace(/[^A-Z0-9]/g, '')
@@ -289,6 +293,22 @@ export async function POST(request: Request) {
                         console.error(`Failed to fetch commodity price for ${symbol}:`, e)
                     }
                 }
+            }
+        } else if (marketType === 'index' && globalIdentifier) {
+            // --- INDICES (Yahoo Finance) ---
+            try {
+                const symbol = globalIdentifier.trim().toUpperCase()
+                const price = await fetchYahooPrice(symbol)
+
+                if (price !== null) {
+                    reference_price = price
+                    reference_time = new Date().toISOString()
+                    data_source = 'Yahoo Finance'
+                } else {
+                    console.warn(`Could not fetch index price for ${symbol} at creation.`)
+                }
+            } catch (e) {
+                console.error("Failed to fetch index price:", e)
             }
         }
 
