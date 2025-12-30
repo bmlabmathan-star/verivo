@@ -33,14 +33,8 @@ const MARKET_CONFIG: Record<string, MarketConfig> = {
 
 const DEFAULT_MARKET: MarketConfig = MARKET_CONFIG['US']
 
-export function isIndexMarketOpen(symbol: string): MarketStatus {
+export function getMarketConfig(symbol: string): MarketConfig {
     const sym = symbol.trim().toUpperCase()
-    // Default to US if not found (or maybe check generic 'US')
-    // We use contains check or direct lookup. Direct lookup is safer.
-    // We'll allow falling back to US if the symbol looks like a standard ticker not in list? 
-    // For now strict lookup is better for known indices, but we need a fallback.
-    // The user prompt implies "NASDAQ / NYSE -> America/New_York".
-
     let config = MARKET_CONFIG[sym]
 
     if (!config) {
@@ -49,7 +43,11 @@ export function isIndexMarketOpen(symbol: string): MarketStatus {
         else if (sym === 'FTSE') config = MARKET_CONFIG['^FTSE'] // handle formatting alias
         else config = DEFAULT_MARKET
     }
+    return config
+}
 
+export function isIndexMarketOpen(symbol: string): MarketStatus {
+    const config = getMarketConfig(symbol)
     const now = new Date()
 
     // Get parts in target timezone
@@ -89,6 +87,94 @@ export function isIndexMarketOpen(symbol: string): MarketStatus {
     }
 
     return { isOpen: true }
+}
+
+export function getNextMarketOpenTime(symbol: string): string {
+    const config = getMarketConfig(symbol)
+    const now = new Date()
+
+    // 1. Get current time parts in Target TZ
+    const fmt = new Intl.DateTimeFormat('en-US', {
+        timeZone: config.tz,
+        hour: 'numeric',
+        minute: 'numeric',
+        weekday: 'short',
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour12: false
+    })
+
+    const getParts = (d: Date) => {
+        const p = fmt.formatToParts(d)
+        const v = (t: string) => p.find(x => x.type === t)?.value
+        return {
+            h: parseInt(v('hour') || '0', 10),
+            m: parseInt(v('minute') || '0', 10),
+            w: v('weekday'),
+            y: parseInt(v('year') || '0', 10),
+            mo: parseInt(v('month') || '0', 10),
+            d: parseInt(v('day') || '0', 10)
+        }
+    }
+
+    let d = new Date(now)
+
+    // Look ahead up to 7 days
+    for (let i = 0; i < 7; i++) {
+        const parts = getParts(d)
+        const { h, m, w } = parts
+        const isWeekend = w === 'Sat' || w === 'Sun'
+
+        const curMin = h * 60 + m
+        const openMin = config.openH * 60 + config.openM
+
+        // If it's not a weekend, check if we can open today (must be strictly future if i==0)
+        // OR if it's a future day, any 'open time' is valid.
+        let validDay = !isWeekend
+        if (validDay && i === 0) {
+            // If today, must be before open time? 
+            // If strictly before open, target is today's open.
+            // If after open, target is tomorrow.
+            if (curMin >= openMin) {
+                validDay = false // Today's open passed, move to next
+            }
+        }
+
+        if (validDay) {
+            // Construct Target Date
+            // Guess UTC
+            let target = new Date(Date.UTC(parts.y, parts.mo - 1, parts.d, config.openH, config.openM, 0))
+
+            // Converge
+            for (let k = 0; k < 3; k++) {
+                const f = new Intl.DateTimeFormat('en-US', { timeZone: config.tz, hour: 'numeric', minute: 'numeric', hour12: false })
+                const p = f.formatToParts(target)
+                const th = parseInt(p.find(x => x.type === 'hour')?.value || '0', 10)
+                const tm = parseInt(p.find(x => x.type === 'minute')?.value || '0', 10)
+
+                const curM = th * 60 + tm
+                const desM = config.openH * 60 + config.openM
+
+                let diff = desM - curM
+                if (diff > 720) diff -= 1440
+                if (diff < -720) diff += 1440
+
+                if (diff === 0) break
+                target = new Date(target.getTime() + diff * 60000)
+            }
+
+            if (target.getTime() > now.getTime()) {
+                return target.toISOString()
+            }
+        }
+
+        // Next day
+        d = new Date(d.getTime() + 24 * 60 * 60 * 1000)
+    }
+
+    // Fallback: 24h from now
+    return new Date(now.getTime() + 86400000).toISOString()
 }
 
 function formatTime(h: number, m: number): string {

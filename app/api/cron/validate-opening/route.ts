@@ -36,67 +36,98 @@ export async function GET(request: Request) {
         const updates = []
 
         for (const prediction of predictions) {
-            // 2. Fetch Market Data
-            // We need: Previous Close (if not already saved) AND Current Opening Price.
-            // Since we cover Global/Stocks, we need a versatile API like AlphaVantage, Yahoo Finance (unofficial), or TwelveData.
+            // 2. Process Prediction
+            let updatesForPrediction = null
 
-            // PLACEHOLDER: Integration with real market data provider.
-            // Example using a hypothetical generic fetching function:
-            // const marketData = await fetchMarketData(prediction.asset_symbol, prediction.market_type);
+            // Check if target date has passed (Market has opened)
+            // If target_date is null, we can't reliably validate unless we check market status.
+            if (prediction.target_date && new Date() >= new Date(prediction.target_date)) {
 
-            // For now, we simulate or log.
-            // In a real scenario, you would do:
-            // const prevClose = prediction.reference_price || marketData.previousClose;
-            // const openPrice = marketData.open;
+                // --- INDICES ---
+                if (prediction.market_type === 'index') {
+                    try {
+                        const finalPrice = await fetchYahooPrice(prediction.asset_symbol)
+                        const refPrice = prediction.reference_price // Should be set at creation (Last Close)
 
-            // NOTE: To make this functional, you must integrate a provider.
-            // e.g. https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=...
+                        if (finalPrice !== null && refPrice !== null) {
+                            const isUp = finalPrice > refPrice
+                            const predictedUp = prediction.direction === 'Up'
 
-            // Logic:
-            /*
-            if (openPrice && prevClose) {
-                const isUp = openPrice > prevClose
-                const isDown = openPrice < prevClose
-                const predictedUp = prediction.direction === 'Up'
-                
-                let outcome = 'Incorrect'
-                if ((predictedUp && isUp) || (!predictedUp && isDown)) {
-                    outcome = 'Correct'
+                            let outcome = 'Incorrect'
+                            // Logic: 
+                            // Up Prediction: Correct if Final > Ref
+                            // Down Prediction: Correct if Final < Ref
+                            if ((predictedUp && isUp) || (!predictedUp && !isUp)) {
+                                if (finalPrice !== refPrice) {
+                                    outcome = 'Correct'
+                                }
+                            }
+
+                            updatesForPrediction = {
+                                id: prediction.id,
+                                final_price: finalPrice,
+                                outcome: outcome,
+                                evaluation_time: new Date().toISOString()
+                            }
+                        }
+                    } catch (e) {
+                        console.error(`Failed to validate index ${prediction.asset_symbol}:`, e)
+                    }
                 }
-                
-                // Update
-                updates.push({
-                    id: prediction.id,
-                    final_price: openPrice,
-                    reference_price: prevClose, // Update if it was null
-                    outcome: outcome,
-                    evaluation_time: new Date().toISOString()
-                })
+
+                // Add other asset types (Crypto/Forex) logic here if needed
             }
-            */
 
-            // For this implementation step, we log that we would process it.
-            console.log(`[Opening Validator] Checking ${prediction.asset_symbol} (${prediction.direction}) - Waiting for Market Data Integration`)
+            if (updatesForPrediction) {
+                updates.push(updatesForPrediction)
+                console.log(`[Opening Validator] Validated ${prediction.asset_symbol}: ${updatesForPrediction.outcome}`)
+            }
         }
 
-        // 3. Batch Update (Commented out until data logic is real)
-        /*
-        for (const update of updates) {
-             const { error } = await supabase
-                .from('predictions')
-                .update(update)
-                .eq('id', update.id)
-             if (error) console.error("Failed to update", update.id, error)
+        // 3. Batch Update
+        if (updates.length > 0) {
+            for (const update of updates) {
+                const { error } = await supabase
+                    .from('predictions')
+                    .update(update)
+                    .eq('id', update.id)
+                if (error) console.error("Failed to update", update.id, error)
+            }
         }
-        */
 
         return NextResponse.json({
             success: true,
-            message: `Processed ${predictions.length} pending opening predictions (Simulation - No Data Provider)`
+            message: `Processed ${updates.length} predictions out of ${predictions.length} pending.`
         })
 
     } catch (error: any) {
         console.error("Opening Validation Error:", error)
         return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+}
+
+// Helper for Yahoo Finance (Duplicated from create-prediction to be self-contained in Cron)
+async function fetchYahooPrice(ticker: string): Promise<number | null> {
+    try {
+        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1m&range=1d`
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            },
+            cache: 'no-store'
+        })
+
+        if (!response.ok) return null
+
+        const data = await response.json()
+        const meta = data?.chart?.result?.[0]?.meta
+
+        if (meta?.regularMarketPrice) {
+            return parseFloat(meta.regularMarketPrice)
+        }
+        return null
+    } catch (e) {
+        console.error("Yahoo fetch error:", e)
+        return null
     }
 }

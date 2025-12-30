@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import { isIndexMarketOpen } from '@/lib/market-hours'
+import { isIndexMarketOpen, getNextMarketOpenTime } from '@/lib/market-hours'
 
 export async function POST(request: Request) {
     try {
@@ -299,11 +299,32 @@ export async function POST(request: Request) {
         } else if (marketType === 'index' && globalIdentifier) {
             // --- INDICES (Yahoo Finance) ---
 
-            // Market Hours Validation (Index Specific)
-            if (prediction_type !== 'opening') {
-                try {
-                    const symbol = globalIdentifier.trim().toUpperCase()
+            const symbol = globalIdentifier.trim().toUpperCase()
 
+            if (prediction_type === 'opening') {
+                // Opening Prediction Logic
+                // 1. Set Reference Price (Last Traded/Previous Close)
+                // We fetch the current price which, if market is closed, is the last close.
+                try {
+                    const price = await fetchYahooPrice(symbol)
+                    if (price !== null) {
+                        reference_price = price
+                        reference_time = new Date().toISOString()
+                        data_source = 'Yahoo Finance'
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch index reference price:", e)
+                }
+
+                // 2. Set Target Date to Next Market Open
+                // Use the helper from market-hours
+                target_date = getNextMarketOpenTime(symbol)
+                duration_minutes = 0
+
+            } else {
+                // Intraday Logic
+                // Market Hours Validation
+                try {
                     const check = isIndexMarketOpen(symbol)
                     if (!check.isOpen) {
                         return NextResponse.json({
@@ -314,25 +335,23 @@ export async function POST(request: Request) {
 
                 } catch (e) {
                     console.error("Time validation error:", e)
-                    // If time validation fails unexpectedly, we log but maybe allow or block?
-                    // Blocking is safer for 'Verified' app.
                     return NextResponse.json({ error: "Unable to validate market hours." }, { status: 500 })
                 }
-            }
 
-            try {
-                const symbol = globalIdentifier.trim().toUpperCase()
-                const price = await fetchYahooPrice(symbol)
+                // Fetch Price
+                try {
+                    const price = await fetchYahooPrice(symbol)
 
-                if (price !== null) {
-                    reference_price = price
-                    reference_time = new Date().toISOString()
-                    data_source = 'Yahoo Finance'
-                } else {
-                    console.warn(`Could not fetch index price for ${symbol} at creation.`)
+                    if (price !== null) {
+                        reference_price = price
+                        reference_time = new Date().toISOString()
+                        data_source = 'Yahoo Finance'
+                    } else {
+                        console.warn(`Could not fetch index price for ${symbol} at creation.`)
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch index price:", e)
                 }
-            } catch (e) {
-                console.error("Failed to fetch index price:", e)
             }
         }
 
