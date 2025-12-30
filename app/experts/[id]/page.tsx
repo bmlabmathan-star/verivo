@@ -1,100 +1,202 @@
-import { getExpertById } from "@/lib/actions/experts"
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { getExpertProfile, getExpertPerformance } from "@/lib/actions/profile"
 import { getPredictions } from "@/lib/actions/predictions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { PredictionCard } from "@/components/prediction-card"
-import { notFound } from "next/navigation"
+import { ShieldCheck, Trophy, Target, Activity, Clock, PieChart as PieIcon, ArrowLeft } from "lucide-react"
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params
+  return {
+    title: `Verivo Expert #${resolvedParams.id.slice(0, 4)} | Credibility Profile`,
+    description: `View the verified performance track record of User ${resolvedParams.id.slice(0, 4)} on Verivo.`,
+  }
+}
 
 export default async function ExpertProfilePage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
-  const expert = await getExpertById(params.id)
-  const predictions = await getPredictions({ expert_id: params.id })
+  const resolvedParams = await params
+  const { id } = resolvedParams
 
-  if (!expert) {
+  // 1. Fetch Profile Data (Stats) and Performance Breakdown parallelly
+  const [profile, performance, predictions] = await Promise.all([
+    getExpertProfile(id),
+    getExpertPerformance(id),
+    getPredictions({ userId: id, revealed: true }) // Only fetch verified/revealed
+  ])
+
+  if (!profile || !profile.stats) {
+    // If user doesn't exist or has no stats, show 404 or empty state
     notFound()
   }
 
-  const stats = expert.expert_stats?.[0] || {
-    total_predictions: 0,
-    correct_predictions: 0,
-    accuracy_rate: 0,
-    verivo_score: 0,
-  }
+  const { stats } = profile
+  const displayName = `User #${id.slice(0, 4)}`
 
   return (
     <div className="container py-12 max-w-5xl">
-      <div className="glass-card overflow-hidden mb-12 border-white/10 relative">
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 animate-pulse" />
-        <CardHeader className="pt-12 pb-8">
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-            <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-purple-500 to-pink-600 text-white flex items-center justify-center text-5xl font-black shadow-2xl animate-in zoom-in duration-500 group-hover:scale-105 transition-transform">
-              {expert.name.charAt(0).toUpperCase()}
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="text-4xl md:text-6xl font-black text-white mb-2 tracking-tighter drop-shadow-lg">
-                {expert.name}
-              </h1>
-              <p className="text-xl text-purple-400 font-mono mb-6">@{expert.username}</p>
-              {expert.bio && (
-                <p className="text-lg text-white/80 leading-relaxed max-w-2xl bg-white/5 p-6 rounded-2xl border border-white/5 backdrop-blur-sm">
-                  {expert.bio}
-                </p>
-              )}
-              <div className="flex items-center justify-center md:justify-start gap-2 mt-6 text-white/40 text-sm font-medium">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                Member since {new Date(expert.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="bg-black/20 border-t border-white/5 p-0">
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y divide-white/5">
-            <div className="p-8 text-center hover:bg-white/5 transition-colors">
-              <div className="text-3xl font-black text-white">{stats.total_predictions}</div>
-              <div className="text-[10px] text-white/30 uppercase font-black tracking-widest mt-1">Total Calls</div>
-            </div>
-            <div className="p-8 text-center hover:bg-white/5 transition-colors">
-              <div className="text-3xl font-black text-green-400">{stats.correct_predictions}</div>
-              <div className="text-[10px] text-white/30 uppercase font-black tracking-widest mt-1">Validated</div>
-            </div>
-            <div className="p-8 text-center hover:bg-white/5 transition-colors">
-              <div className="text-3xl font-black text-purple-400">
-                {stats.accuracy_rate ? `${stats.accuracy_rate.toFixed(0)}%` : '0%'}
-              </div>
-              <div className="text-[10px] text-white/30 uppercase font-black tracking-widest mt-1">Hit Rate</div>
-            </div>
-            <div className="p-8 text-center hover:bg-white/5 transition-colors">
-              <div className="text-3xl font-black text-pink-500">{stats.verivo_score}</div>
-              <div className="text-[10px] text-white/30 uppercase font-black tracking-widest mt-1">Vault Score</div>
-            </div>
-          </div>
-        </CardContent>
+      {/* Breadcrumb / Back */}
+      <div className="mb-6">
+        <Link href="/feed" className="text-gray-400 hover:text-white flex items-center gap-2 text-sm">
+          <ArrowLeft className="w-4 h-4" /> Back to Feed
+        </Link>
       </div>
 
-      <div className="mb-8 flex items-center gap-4">
-        <h2 className="text-3xl font-black text-white tracking-tight">PREDICTION HISTORY</h2>
-        <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-      </div>
-      <div className="space-y-6">
-        {predictions.length === 0 ? (
-          <div className="glass-card p-12 text-center text-white/40">
-            No historical data available for this profile.
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row gap-8 items-start mb-12">
+        {/* Avatar Placeholder */}
+        <div className="w-24 h-24 md:w-32 md:h-32 rounded-3xl bg-gradient-to-br from-purple-600 to-blue-900 border-2 border-white/10 flex items-center justify-center shadow-2xl flex-shrink-0">
+          <span className="text-3xl md:text-5xl font-black text-white/20">
+            {displayName.charAt(displayName.length - 1)}
+          </span>
+        </div>
+
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-4xl font-black text-white tracking-tighter">{displayName}</h1>
+            <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 px-2 py-0.5">
+              <ShieldCheck className="w-3 h-3 mr-1" /> Verified
+            </Badge>
           </div>
-        ) : (
-          predictions.map((prediction) => (
-            <PredictionCard
-              key={prediction.id}
-              prediction={prediction as any}
-              showFull={prediction.is_revealed}
-            />
-          ))
-        )}
+
+          <div className="flex flex-wrap gap-6 text-sm text-gray-400 mb-6">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-purple-400" />
+              <span>Started Contributing: 2024</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-purple-400" />
+              <span>{stats.total_predictions} Total Inputs</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Hero Score */}
+        <div className="text-right">
+          <div className="text-xs text-gray-400 uppercase font-bold tracking-widest mb-1">Verivo Score</div>
+          <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600">
+            {stats.verivo_score.toFixed(2)}
+          </div>
+        </div>
+      </div>
+
+      {/* Primary Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
+        <Card className="glass-card border-white/10 bg-white/5">
+          <CardContent className="p-6 text-center">
+            <div className="text-sm text-gray-400 mb-1">Credible Accuracy</div>
+            <div className="text-3xl font-bold text-white">{(stats.accuracy_rate * 100).toFixed(1)}%</div>
+          </CardContent>
+        </Card>
+        <Card className="glass-card border-white/10 bg-white/5">
+          <CardContent className="p-6 text-center">
+            <div className="text-sm text-gray-400 mb-1">Win Rate (Raw)</div>
+            <div className="text-3xl font-bold text-gray-300">
+              {stats.accuracy_rate ? (stats.accuracy_rate * 100).toFixed(1) + '%' : 'N/A'}
+              {/* Note: Simplified, assuming raw~credible loop for now if not separate in view */}
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="glass-card border-white/10 bg-white/5">
+          <CardContent className="p-6 text-center">
+            <div className="text-sm text-gray-400 mb-1">Correct Calls</div>
+            <div className="text-3xl font-bold text-green-400">{stats.correct_predictions}</div>
+          </CardContent>
+        </Card>
+        <Card className="glass-card border-white/10 bg-white/5">
+          <CardContent className="p-6 text-center">
+            <div className="text-sm text-gray-400 mb-1">Rank Tier</div>
+            <div className="text-3xl font-bold text-purple-400">Top 10%</div>
+            {/* Hardcoded for now, would come from rank query */}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Breakdown Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+        {/* Asset Class Breakdown */}
+        <Card className="glass-card border-white/10">
+          <CardHeader className="border-b border-white/5 pb-4">
+            <CardTitle className="text-lg flex items-center gap-2 text-white">
+              <PieIcon className="w-5 h-5 text-blue-400" /> Asset Performance
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              {performance.byAsset.length > 0 ? performance.byAsset.map((item: any) => (
+                <div key={item.name} className="flex items-center justify-between group">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span className="text-gray-300 font-medium">{item.name}</span>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <span className="text-xs text-gray-500">{item.count} calls</span>
+                    <span className="text-white font-mono font-bold">{item.accuracy.toFixed(1)}%</span>
+                  </div>
+                </div>
+              )) : <div className="text-gray-500 italic text-sm">No asset data yet.</div>}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Timeframe Breakdown */}
+        <Card className="glass-card border-white/10">
+          <CardHeader className="border-b border-white/5 pb-4">
+            <CardTitle className="text-lg flex items-center gap-2 text-white">
+              <Clock className="w-5 h-5 text-pink-400" /> Duration Mastery
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              {performance.byTimeframe.length > 0 ? performance.byTimeframe.map((item: any) => (
+                <div key={item.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${item.name === 'Long Term' ? 'bg-purple-500' : 'bg-pink-500'}`} />
+                    <span className="text-gray-300 font-medium">{item.name}</span>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <span className="text-xs text-gray-500">{item.count} calls</span>
+                    <span className="text-white font-mono font-bold">{item.accuracy.toFixed(1)}%</span>
+                  </div>
+                </div>
+              )) : <div className="text-gray-500 italic text-sm">No duration data yet.</div>}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Verified Feed */}
+      <div>
+        <div className="mb-6 flex items-center gap-3">
+          <h2 className="text-2xl font-black text-white tracking-tight">VERIFIED RECORD</h2>
+          <div className="h-px flex-1 bg-white/10" />
+        </div>
+
+        <div className="space-y-4">
+          {predictions.length > 0 ? (
+            predictions.map((p) => (
+              // Reusing PredictionCard but ensuring logic handles read-only view cleanly
+              // In a real 'Read Only' mode, we might disable clicking through or editing
+              <div key={p.id} className="pointer-events-none">
+                <PredictionCard prediction={p as any} showFull={true} />
+              </div>
+            ))
+          ) : (
+            <div className="p-12 text-center border border-dashed border-white/10 rounded-2xl bg-white/5">
+              <p className="text-gray-500">No verified history available for this user.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
 }
+
 
 
 
