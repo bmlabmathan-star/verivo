@@ -1,15 +1,19 @@
 import Link from "next/link"
 import { getVerifiedFeed, getTopPerformers } from "@/lib/actions/feed"
+import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, TrendingDown, Filter, ListFilter, Trophy } from "lucide-react"
+import { TrendingUp, TrendingDown, Filter, ListFilter, Trophy, LogIn } from "lucide-react"
 
 export default async function FeedPage({
   searchParams,
 }: {
   searchParams: Promise<{ filter?: string; sort?: string }>;
 }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   const resolvedParams = await searchParams; // Awaiting the promise
   const filter = resolvedParams.filter || "All"
   const sort = resolvedParams.sort || "recency"
@@ -18,6 +22,8 @@ export default async function FeedPage({
   const topPerformers = await getTopPerformers()
 
   const formatUser = (id: string) => `User #${id.slice(0, 4)}`
+
+  // ... (date formatting remains same)
   const formatDate = (dateStr: string) => {
     if (!dateStr) return ""
     return new Date(dateStr).toLocaleDateString("en-US", {
@@ -28,8 +34,7 @@ export default async function FeedPage({
     })
   }
 
-  // Helper for difficulty badge based on weight
-  // Simple heuristic: <30min (Low), <3h (Med), >3h (High)
+  // ... (difficulty helper remains same)
   const getDifficulty = (mins: number) => {
     if (mins < 30) return { label: "Short Term", color: "bg-blue-500/20 text-blue-300" }
     if (mins < 180) return { label: "Medium Term", color: "bg-purple-500/20 text-purple-300" }
@@ -39,7 +44,7 @@ export default async function FeedPage({
   return (
     <div className="container py-8 max-w-5xl">
       {/* Header */}
-      <div className="mb-10">
+      <div className="mb-8">
         <h1 className="text-4xl font-black text-white tracking-tighter mb-2">
           VERIFIED FEED
         </h1>
@@ -47,6 +52,27 @@ export default async function FeedPage({
           The immutable ledger of validated predictions. Filtering noise from signal.
         </p>
       </div>
+
+      {/* Sign In Banner (Only for guests) */}
+      {!user && (
+        <div className="mb-10 p-6 rounded-2xl bg-gradient-to-r from-purple-900/40 to-blue-900/40 border border-purple-500/30 flex flex-col md:flex-row items-center justify-between gap-6 backdrop-blur-md relative overflow-hidden group">
+          <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-10 transition-opacity" />
+          <div className="relative z-10">
+            <h3 className="text-xl font-bold text-white mb-2">Join the Protocol</h3>
+            <p className="text-purple-200/80 text-sm max-w-lg">
+              Unlock your own credibility score. Sign in to start building your verified track record on the blockchain of truth.
+            </p>
+          </div>
+          <div className="relative z-10 flex-shrink-0">
+            <Link href="/login">
+              <Button size="lg" className="bg-white text-purple-900 hover:bg-purple-50 font-bold px-8">
+                <LogIn className="w-4 h-4 mr-2" />
+                Sign In to Contribute
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Top Performers Section */}
       <div className="mb-12">
