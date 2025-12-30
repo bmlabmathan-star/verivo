@@ -1,95 +1,226 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
+import { getVerifiedFeed, getTopPerformers } from "@/lib/actions/feed"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { TrendingUp, TrendingDown, Filter, ListFilter, Trophy } from "lucide-react"
 
-export default function FeedPage() {
+export default async function FeedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string; sort?: string }>;
+}) {
+  const resolvedParams = await searchParams; // Awaiting the promise
+  const filter = resolvedParams.filter || "All"
+  const sort = resolvedParams.sort || "recency"
+
+  const feedItems = await getVerifiedFeed({ filter, sort })
+  const topPerformers = await getTopPerformers()
+
+  const formatUser = (id: string) => `User #${id.slice(0, 4)}`
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return ""
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    })
+  }
+
+  // Helper for difficulty badge based on weight
+  // Simple heuristic: <30min (Low), <3h (Med), >3h (High)
+  const getDifficulty = (mins: number) => {
+    if (mins < 30) return { label: "Short Term", color: "bg-blue-500/20 text-blue-300" }
+    if (mins < 180) return { label: "Medium Term", color: "bg-purple-500/20 text-purple-300" }
+    return { label: "Long Term", color: "bg-pink-500/20 text-pink-300" }
+  }
+
   return (
-    <div className="container py-8 max-w-4xl">
-      <div className="mb-12 text-center">
-        <h1 className="text-5xl md:text-7xl font-black text-white mb-4 tracking-tighter drop-shadow-xl animate-in fade-in slide-in-from-top-10 duration-700">
-          INTEL FEED
+    <div className="container py-8 max-w-5xl">
+      {/* Header */}
+      <div className="mb-10">
+        <h1 className="text-4xl font-black text-white tracking-tighter mb-2">
+          VERIFIED FEED
         </h1>
-        <p className="text-xl text-white/80 font-medium">
-          The chronological ledger of commitment and revelation.
+        <p className="text-gray-400 font-medium max-w-2xl">
+          The immutable ledger of validated predictions. Filtering noise from signal.
         </p>
       </div>
 
-      <div className="glass-card p-10 rounded-3xl mb-12 border-l-8 border-pink-500">
-        <h2 className="text-2xl font-bold text-white mb-4">Feed Protocol: Locked vs. Revealed</h2>
-        <p className="text-white/70 leading-relaxed">
-          The Verivo Feed tracks the lifecycle of every prediction.
-          <span className="text-white font-bold mx-1">Locked</span> entries represent active commitments where the outcome is yet to be determined.
-          <span className="text-white font-bold mx-1">Revealed</span> entries are validated records where the predicted outcome has been compared against primary market or event data.
-        </p>
+      {/* Top Performers Section */}
+      <div className="mb-12">
+        <div className="flex items-center gap-2 mb-4">
+          <Trophy className="w-5 h-5 text-yellow-400" />
+          <h2 className="text-lg font-bold text-white">Top Credibility Scores</h2>
+        </div>
+        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+          {topPerformers.length > 0 ? (
+            topPerformers.map((user: any, i: number) => (
+              <div
+                key={user.user_id}
+                className="flex-shrink-0 w-64 glass-card p-4 rounded-xl border border-white/10 hover:border-yellow-500/30 transition-all cursor-default"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${i === 0 ? "bg-yellow-500" : i === 1 ? "bg-gray-400" : i === 2 ? "bg-orange-700" : "bg-white/10"
+                    }`}>
+                    {i + 1}
+                  </div>
+                  <div>
+                    <div className="font-bold text-white text-sm">{formatUser(user.user_id)}</div>
+                    <div className="text-xs text-gray-400">{user.total_predictions} verified forecasts</div>
+                  </div>
+                </div>
+                <div className="flex justify-between items-end border-t border-white/5 pt-3">
+                  <div className="text-xs text-gray-500 uppercase font-bold">Verivo Score</div>
+                  <div className="text-xl font-black text-white">{user.verivo_score?.toFixed(2) || "0.00"}</div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="w-full text-center py-6 text-gray-500 text-sm border border-dashed border-white/10 rounded-xl">
+              No ranked performers data available yet.
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Static Timeline Feed */}
-      <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-white/20 before:to-transparent">
-        {[
-          {
-            time: "JUST NOW",
-            status: "Locked",
-            title: "US Federal Reserve Interest Rate Decision",
-            contributor: "Contributor #842",
-            domain: "Finance",
-            color: "text-yellow-400",
-            icon: "🔒"
-          },
-          {
-            time: "2 HOURS AGO",
-            status: "Revealed",
-            title: "NVIDIA (NVDA) Q4 Performance Forecast",
-            contributor: "Contributor #102",
-            domain: "Finance",
-            result: "Validated vs Market Data",
-            color: "text-green-400",
-            icon: "✅"
-          },
-          {
-            time: "YESTERDAY",
-            status: "Locked",
-            title: "2026 Global Tech Index Forecast",
-            contributor: "Contributor #119",
-            domain: "Public Events",
-            color: "text-yellow-400",
-            icon: "🔒"
-          }
-        ].map((item, i) => (
-          <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
-            {/* Dot */}
-            <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white/20 bg-background text-white shadow absolute left-0 md:left-1/2 md:-translate-x-1/2 z-10 group-hover:scale-110 transition-transform">
-              {item.icon}
-            </div>
+      {/* Controls & Filters */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        {/* Filter Tabs */}
+        <div className="flex flex-wrap gap-2">
+          {["All", "Crypto", "Stocks", "Forex", "Commodities", "Indices"].map((f) => (
+            <Link key={f} href={`/feed?filter=${f}&sort=${sort}`} scroll={false}>
+              <Badge
+                variant="outline"
+                className={`cursor-pointer px-4 py-2 text-sm border-white/10 ${filter === f
+                  ? "bg-purple-600 border-purple-500 text-white"
+                  : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                  }`}
+              >
+                {f}
+              </Badge>
+            </Link>
+          ))}
+        </div>
 
-            {/* Card */}
-            <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] glass-card p-6 rounded-2xl border-white/10 group-hover:border-white/20 transition-all">
-              <div className="flex items-center justify-between mb-2">
-                <span className={`text-[10px] font-black tracking-widest uppercase ${item.color}`}>{item.status}</span>
-                <span className="text-[10px] text-white/40 font-mono">{item.time}</span>
-              </div>
-              <h3 className="text-lg font-bold text-white mb-2">{item.title}</h3>
-              <div className="flex justify-between items-end">
-                <div>
-                  <div className="text-[10px] text-white/40 uppercase tracking-widest mb-1">Contributor</div>
-                  <div className="text-sm font-medium text-white/80">{item.contributor}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] text-white/40 uppercase tracking-widest mb-1">Domain</div>
-                  <div className="text-sm font-medium text-white/80">{item.domain}</div>
-                </div>
-              </div>
-              {item.result && (
-                <div className="mt-4 pt-4 border-t border-white/5 text-[10px] font-mono text-green-400/80">
-                  {item.result}
-                </div>
-              )}
-            </div>
+        {/* Sort Dropdown simulated with links for simplicity in server component */}
+        <div className="flex items-center gap-2 text-sm bg-white/5 rounded-lg p-1 border border-white/10">
+          <span className="px-2 text-gray-500 text-xs uppercase font-bold">Sort By</span>
+          <Link
+            href={`/feed?filter=${filter}&sort=recency`}
+            className={`px-3 py-1 rounded-md transition-colors ${sort === 'recency' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}
+          >
+            Recency
+          </Link>
+          <Link
+            href={`/feed?filter=${filter}&sort=timeframe`}
+            className={`px-3 py-1 rounded-md transition-colors ${sort === 'timeframe' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}
+          >
+            Duration
+          </Link>
+        </div>
+      </div>
+
+      {/* Main Feed Grid */}
+      <div className="grid grid-cols-1 gap-4">
+        {feedItems.length > 0 ? (
+          feedItems.map((item: any) => {
+            const isCorrect = item.outcome === "Correct"
+            const difficulty = getDifficulty(item.duration_minutes || 0)
+
+            return (
+              <Card key={item.id} className="glass-card border-white/10 overflow-hidden group hover:border-white/20 transition-all">
+                <CardContent className="p-0">
+                  <div className="flex flex-col md:flex-row p-5 gap-6">
+                    {/* Status Column */}
+                    <div className="flex items-start md:items-center min-w-[100px]">
+                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${isCorrect
+                        ? "bg-green-500/10 border-green-500/20 text-green-400"
+                        : "bg-red-500/10 border-red-500/20 text-red-400"
+                        }`}>
+                        {isCorrect ? "✅ Correct" : "❌ Incorrect"}
+                      </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-2 text-xs text-gray-500 mb-2">
+                        <span className="font-mono text-purple-400 uppercase tracking-wider">{item.category}</span>
+                        <span>•</span>
+                        <span>{formatDate(item.evaluation_time)}</span>
+                        <span>•</span>
+                        <span className={`px-1.5 py-0.5 rounded ${difficulty.color} text-[10px] uppercase font-bold`}>
+                          {difficulty.label}
+                        </span>
+                      </div>
+
+                      <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-3">
+                        {item.title}
+                      </h3>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-white/5 rounded-lg p-3 border border-white/5">
+                        <div>
+                          <p className="text-gray-500 text-xs mb-0.5">Asset</p>
+                          <p className="text-gray-300 font-medium">{item.asset_name || item.globalIdentifier || "N/A"}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-xs mb-0.5">Direction</p>
+                          <p className={`font-medium flex items-center gap-1 ${item.direction === 'Up' ? 'text-green-400' : 'text-red-400'}`}>
+                            {item.direction === 'Up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                            {item.direction}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-xs mb-0.5">Reference Price</p>
+                          <p className="text-gray-300 font-mono">{item.reference_price?.toFixed(2) || "---"}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-xs mb-0.5">Final Price</p>
+                          <p className="text-gray-300 font-mono">{item.final_price?.toFixed(2) || "---"}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Score Impact Column */}
+                    <div className="md:border-l border-white/10 md:pl-6 flex flex-col justify-center min-w-[140px]">
+                      <div className="mb-2">
+                        <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1">Writer</p>
+                        <p className="text-sm text-white font-medium">{formatUser(item.user_id)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1">Score Impact</p>
+                        <p className={`text-2xl font-black ${isCorrect ? "text-white" : "text-gray-600"}`}>
+                          {isCorrect ? "+" : ""}{isCorrect ? (item.duration_minutes ? (0.1).toFixed(2) : "0.00") : "0.00"}
+                          {/* Note: Simplified score display. Ideally fetch stored score delta */}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })
+        ) : (
+          <div className="text-center py-20 px-4 rounded-3xl border border-dashed border-white/10 bg-white/5">
+            <Filter className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-white mb-2">No Verified Forecasts Found</h3>
+            <p className="text-gray-400 max-w-md mx-auto">
+              There are no forecasts that match your current filters. Try adjusting the category or check back later once more predictions are verified.
+            </p>
           </div>
-        ))}
+        )}
       </div>
 
-      <div className="mt-16 p-8 glass-card rounded-2xl border border-white/5 text-center bg-white/5 italic text-white/40 text-sm">
-        Entries shown above are conceptual system examples designed to demonstrate the feed protocol.
-        Live data streaming will be enabled in a future release.
+      {/* Disclaimer Footer */}
+      <div className="mt-16 pt-8 border-t border-white/10 text-center">
+        <p className="text-gray-500 text-xs max-w-3xl mx-auto leading-relaxed italic">
+          Disclaimer: This feed represents a historical record of verified user predictions on the Verivo protocol.
+          It does not constitute financial advice, signals, or recommendations to buy or sell any asset.
+          Past performance of any contributor is not indicative of future results.
+        </p>
       </div>
     </div>
   )
 }
+
