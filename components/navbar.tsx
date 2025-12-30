@@ -49,7 +49,7 @@ export function Navbar() {
   ]
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+    <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-950/80 backdrop-blur supports-[backdrop-filter]:bg-slate-950/60">
       <div className="container flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
           <span className="text-2xl">📊</span>
@@ -64,7 +64,7 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm font-medium transition-colors hover:text-purple-600 ${pathname === link.href ? 'text-purple-600' : 'text-gray-700'
+              className={`text-sm font-medium transition-colors hover:text-purple-400 ${pathname === link.href ? 'text-purple-400' : 'text-gray-300'
                 }`}
             >
               {link.label}
@@ -76,7 +76,7 @@ export function Navbar() {
               <Link href="/dashboard">
                 <Button variant="ghost" size="sm">Dashboard</Button>
               </Link>
-              <span className="text-sm text-gray-600">Welcome, {user.email?.split('@')[0]}</span>
+              <span className="text-sm text-gray-400">Welcome, {user.email?.split('@')[0]}</span>
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 Logout
               </Button>

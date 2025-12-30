@@ -71,24 +71,24 @@ export default async function DashboardPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
+        <Card className="glass-card border-white/10">
           <CardHeader>
-            <CardTitle className="text-2xl">{stats.total_predictions}</CardTitle>
-            <p className="text-sm text-muted-foreground">Forecasts Made</p>
+            <CardTitle className="text-2xl text-white">{stats.total_predictions}</CardTitle>
+            <p className="text-sm text-gray-400">Forecasts Made</p>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="glass-card border-white/10">
           <CardHeader>
-            <CardTitle className="text-2xl">{stats.correct_predictions}</CardTitle>
-            <p className="text-sm text-muted-foreground">Correct Forecasts</p>
+            <CardTitle className="text-2xl text-white">{stats.correct_predictions}</CardTitle>
+            <p className="text-sm text-gray-400">Correct Forecasts</p>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="glass-card border-white/10">
           <CardHeader>
-            <CardTitle className="text-2xl">
+            <CardTitle className="text-2xl text-white">
               {stats.accuracy_display}
             </CardTitle>
-            <p className="text-sm text-muted-foreground">Credible Accuracy</p>
+            <p className="text-sm text-gray-400">Credible Accuracy</p>
           </CardHeader>
         </Card>
         <Card className="bg-gradient-to-br from-purple-500 to-purple-700 text-white">
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Performance Detail Card */}
-      <Card className="mb-8">
+      <Card className="mb-8 glass-card border-white/10">
         <CardHeader>
           <CardTitle>Your Credibility & Performance</CardTitle>
         </CardHeader>
@@ -115,21 +115,21 @@ export default async function DashboardPage() {
                 <p className="text-sm text-muted-foreground">Calculated from verified forecasts using Verivo Score v1.0</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-4 bg-secondary rounded-lg text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Credible Accuracy</p>
+                <div className="p-4 bg-slate-900/50 border border-white/5 rounded-lg text-center backdrop-blur-sm">
+                  <p className="text-sm text-gray-400 mb-1">Credible Accuracy</p>
                   <p className="text-3xl font-bold text-primary">{accuracyPercentage}%</p>
                 </div>
-                <div className="p-4 bg-secondary rounded-lg text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Raw Accuracy (Win Rate)</p>
+                <div className="p-4 bg-slate-900/50 border border-white/5 rounded-lg text-center backdrop-blur-sm">
+                  <p className="text-sm text-gray-400 mb-1">Raw Accuracy (Win Rate)</p>
                   {/* raw_accuracy is decimal, e.g. 0.85 -> 85% */}
-                  <p className="text-2xl font-bold text-muted-foreground">
+                  <p className="text-2xl font-bold text-gray-300">
                     {scores.raw_accuracy ? (scores.raw_accuracy * 100).toFixed(1) + '%' : '0%'}
                   </p>
                 </div>
-                <div className="p-4 bg-secondary rounded-lg text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Confidence Factor</p>
+                <div className="p-4 bg-slate-900/50 border border-white/5 rounded-lg text-center backdrop-blur-sm">
+                  <p className="text-sm text-gray-400 mb-1">Confidence Factor</p>
                   {/* confidence_factor is average weight e.g. 0.65 */}
-                  <p className="text-2xl font-bold text-muted-foreground">
+                  <p className="text-2xl font-bold text-gray-300">
                     {scores.confidence_factor?.toFixed(2) || '0.00'}
                   </p>
                 </div>
@@ -156,40 +156,40 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <p className="text-muted-foreground leading-relaxed">
+            <p className="text-gray-300 leading-relaxed">
               Verivo doesn't just measure if you are right or wrong—it measures how <strong>difficult</strong> your forecast was.
-              We operate on a simple principle: <span className="text-foreground font-medium">Longer timeframes require more skill and carry more weight.</span>
+              We operate on a simple principle: <span className="text-white font-medium">Longer timeframes require more skill and carry more weight.</span>
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Weight Table */}
             <div>
-              <h4 className="text-sm font-semibold mb-3">Timeframe Weights</h4>
-              <div className="rounded-lg border overflow-hidden">
+              <h4 className="text-sm font-semibold mb-3 text-white">Timeframe Weights</h4>
+              <div className="rounded-lg border border-white/10 overflow-hidden">
                 <table className="w-full text-sm">
-                  <thead className="bg-muted/50">
-                    <tr className="border-b">
-                      <th className="px-4 py-2 text-left font-medium">Duration</th>
-                      <th className="px-4 py-2 text-right font-medium">Weight Value</th>
+                  <thead className="bg-white/5">
+                    <tr className="border-b border-white/10">
+                      <th className="px-4 py-2 text-left font-medium text-gray-300">Duration</th>
+                      <th className="px-4 py-2 text-right font-medium text-gray-300">Weight Value</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y">
+                  <tbody className="divide-y divide-white/10">
                     <tr>
-                      <td className="px-4 py-2">5 Minutes</td>
-                      <td className="px-4 py-2 text-right">0.1x</td>
+                      <td className="px-4 py-2 text-gray-300">5 Minutes</td>
+                      <td className="px-4 py-2 text-right text-gray-300">0.1x</td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-2">10 Minutes</td>
-                      <td className="px-4 py-2 text-right">0.2x</td>
+                      <td className="px-4 py-2 text-gray-300">10 Minutes</td>
+                      <td className="px-4 py-2 text-right text-gray-300">0.2x</td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-2">30 Minutes</td>
-                      <td className="px-4 py-2 text-right">0.5x</td>
+                      <td className="px-4 py-2 text-gray-300">30 Minutes</td>
+                      <td className="px-4 py-2 text-right text-gray-300">0.5x</td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-2">1 Hour</td>
-                      <td className="px-4 py-2 text-right">0.8x</td>
+                      <td className="px-4 py-2 text-gray-300">1 Hour</td>
+                      <td className="px-4 py-2 text-right text-gray-300">0.8x</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-2 text-blue-300">Opening Forecast</td>
@@ -205,31 +205,31 @@ export default async function DashboardPage() {
             </div>
 
             {/* Example */}
-            <div className="bg-muted/30 rounded-lg p-5 border border-dashed flex flex-col justify-center">
-              <h4 className="text-sm font-semibold mb-2">Why this matters</h4>
-              <p className="text-sm text-muted-foreground mb-4">
+            <div className="bg-slate-900/40 rounded-lg p-5 border border-dashed border-white/20 flex flex-col justify-center">
+              <h4 className="text-sm font-semibold mb-2 text-white">Why this matters</h4>
+              <p className="text-sm text-gray-400 mb-4">
                 Imagine two users calculate the same move:
               </p>
               <ul className="space-y-3 text-sm">
                 <li className="flex gap-2">
                   <span className="bg-red-500/10 text-red-400 px-2 py-0.5 rounded text-xs font-mono h-fit">User A</span>
-                  <span className="text-muted-foreground">Predicts a 5-minute swing. Correct outcome gets <strong className="text-foreground">0.1 points</strong>.</span>
+                  <span className="text-gray-400">Predicts a 5-minute swing. Correct outcome gets <strong className="text-white">0.1 points</strong>.</span>
                 </li>
                 <li className="flex gap-2">
                   <span className="bg-green-500/10 text-green-400 px-2 py-0.5 rounded text-xs font-mono h-fit">User B</span>
-                  <span className="text-muted-foreground">Predicts a 3-hour trend. Correct outcome gets <strong className="text-foreground">1.0 point</strong>.</span>
+                  <span className="text-gray-400">Predicts a 3-hour trend. Correct outcome gets <strong className="text-white">1.0 point</strong>.</span>
                 </li>
               </ul>
-              <p className="mt-4 text-xs text-muted-foreground italic border-t pt-3">
+              <p className="mt-4 text-xs text-gray-500 italic border-t border-white/10 pt-3">
                 "User B is rewarded 10x more because sustaining accuracy over hours is significantly harder than minutes."
               </p>
-            </div>
-          </div>
+            </div> // This closing div matches the div that started at line 208 for the "Example" block
+          </div> // This closes the grid-cols-2 div started at line 165
         </CardContent>
       </Card>
 
       {/* My Forecasts */}
-      <Card>
+      <Card className="glass-card border-white/10">
         <CardHeader>
           <CardTitle>My Forecasts</CardTitle>
         </CardHeader>
