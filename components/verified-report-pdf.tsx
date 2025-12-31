@@ -161,6 +161,9 @@ export interface VerifiedReportData {
     reportId: string
     generatedAt: string
     expertName: string | null
+    displayName?: string | null
+    username?: string | null
+    contributorId?: string
     verivoScore: number
     credibleAccuracy: number
     confidenceFactor: number
@@ -185,7 +188,19 @@ export const VerifiedReportPDF = ({ data }: { data: VerifiedReportData }) => {
                     <View style={styles.titleSection}>
                         <View>
                             <Text style={styles.reportTitle}>Verified Performance Report</Text>
-                            <Text style={styles.expertName}>{data.expertName || "Anonymous Expert"}</Text>
+                            <Text style={styles.expertName}>
+                                {data.displayName || data.expertName || "Anonymous Expert"}
+                            </Text>
+                            {data.username && (
+                                <Text style={{ fontSize: 14, color: '#7C3AED', marginBottom: 2 }}>
+                                    @{data.username}
+                                </Text>
+                            )}
+                            {data.contributorId && (
+                                <Text style={{ fontSize: 10, color: '#94A3B8', marginBottom: 4 }}>
+                                    (Contributor ID: {data.contributorId})
+                                </Text>
+                            )}
                             <Text style={styles.dateText}>
                                 Generated on {new Date(data.generatedAt).toLocaleDateString()}
                             </Text>

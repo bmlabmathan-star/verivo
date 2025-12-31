@@ -34,6 +34,9 @@ export default async function DashboardPage() {
   // Updated filter param from expert_id to userId to match new action signature
   const predictions = await getPredictions({ userId: user.id })
 
+  // Fetch expert details for the report (name, username)
+  const expertProfile = await getCurrentExpert()
+
   // Phase 4: Fetch Credibility Scores (New View)
   // Phase 4: Fetch Credibility Scores (New Views)
   // We fetch from specialized views for Verivo Score and Confidence Factor
@@ -144,6 +147,8 @@ export default async function DashboardPage() {
           <DownloadReportButton
             userData={{
               userId: user.id,
+              name: expertProfile?.name || null,
+              username: expertProfile?.username || null,
               verivoScore: verivoScoreVal,
               accuracy: parseFloat(accuracyPercentage),
               confidenceFactor: confidenceFactorVal,

@@ -9,6 +9,8 @@ import { VerifiedReportPDF, VerifiedReportData } from "@/components/verified-rep
 interface DownloadReportButtonProps {
     userData: {
         userId: string
+        name: string | null
+        username: string | null
         verivoScore: number
         accuracy: number
         confidenceFactor: number
@@ -24,16 +26,39 @@ export function DownloadReportButton({ userData }: DownloadReportButtonProps) {
         try {
             setLoading(true)
 
-            // Generate Client-Side Report ID (Frontend Only Fix)
+            // Generate Client-Side Report ID
             const generatedId = `VR-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
             const generatedAt = new Date().toISOString()
-            const expertName = `Contributor #${userData.userId.slice(0, 4)}`
+
+            // Construct Expert Display Name
+            // Priority: Name > Username > Contributor #ID
+            let expertDisplayName = `Contributor #${userData.userId.slice(0, 4)}`
+            let subText = ""
+
+            if (userData.name) {
+                expertDisplayName = userData.name
+                if (userData.username) subText = `@${userData.username}`
+            } else if (userData.username) {
+                expertDisplayName = `@${userData.username}`
+            }
+
+            // Append implicit ID for trace if needed, but the PDF might handle subtext separately?
+            // For now, let's just pass the best primary name as expertName, and handle specific fields if we update the PDF component
+            // to support separate fields. The PDF currently takes expertName string. 
+            // Let's pass the "Full Name" or "Username" as expertName, and we might need to update VerifiedReportData
+            // to support more fields if we want the specific visual layout requested.
+            // Requirement 2: "Full Name \n @username \n (Contributor ID: XXXX)"
+            // Let's update the PDF data structure to support this.
 
             // Prepare Data for PDF using Dashboard State
             const pdfData: VerifiedReportData = {
                 reportId: generatedId,
                 generatedAt: generatedAt,
-                expertName: expertName,
+                expertName: userData.name || userData.username || `Contributor #${userData.userId.slice(0, 4)}`,
+                // Pass extra fields for better formatting
+                displayName: userData.name,
+                username: userData.username,
+                contributorId: userData.userId.slice(0, 4),
                 verivoScore: userData.verivoScore,
                 credibleAccuracy: userData.accuracy,
                 confidenceFactor: userData.confidenceFactor,
