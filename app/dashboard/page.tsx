@@ -1,27 +1,12 @@
+import { redirect } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
+import { getCurrentExpert } from "@/lib/actions/experts"
+import { getPredictions } from "@/lib/actions/predictions"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { PredictionCard } from "@/components/prediction-card"
 import { ShareScoreButton } from "@/components/share-score-button"
-
-// ... inside the component ...
-
-<Card className="bg-gradient-to-br from-purple-500 to-purple-700 text-white relative overflow-hidden">
-  <CardHeader className="pb-2">
-    <div className="flex justify-between items-start">
-      <CardTitle className="text-2xl text-white">{stats.verivo_score}</CardTitle>
-      <ShareScoreButton
-        stats={{
-          verivoScore: stats.verivo_score,
-          accuracy: accuracyPercentage, // raw string "38.3"
-          totalPredictions: stats.total_predictions,
-          confidenceFactor: stats.confidence_factor
-        }}
-        profileUrl={`https://verivo.app/experts/${user.id}`}
-      />
-    </div>
-    <div className="space-y-1 mt-1">
-      <p className="text-sm text-white/80">Verivo Score</p>
-      <p className="text-xs text-white/60">Composite score based on verified accuracy and difficulty</p>
-    </div>
-  </CardHeader>
-</Card>
 
 type VerivoScore = {
   user_id: string
