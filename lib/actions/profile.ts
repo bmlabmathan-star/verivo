@@ -153,5 +153,5 @@ export async function getExpertPerformance(expertId: string) {
     // Confidence Factor = Avg Weight
     const confidenceFactor = totalCount > 0 ? (totalWeight / totalCount) : 0
 
-    return { byAsset, byTimeframe, scoreHistory, confidenceFactor }
+    return { byAsset, byTimeframe, scoreHistory, confidenceFactor, predictions }
 }

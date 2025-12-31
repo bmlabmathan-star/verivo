@@ -258,7 +258,7 @@ export function PredictionCard({ prediction }: PredictionCardProps) {
         <div className="flex items-center justify-between pt-2">
           {getStatusBadge()}
           {prediction.experts && (
-            <Link href={`/experts/${prediction.experts.username || '#'}`} className="text-xs text-white/40 hover:text-white transition-colors">
+            <Link href={`/expert/${prediction.experts.username || prediction.experts.name}`} className="text-xs text-white/40 hover:text-white transition-colors">
               by {prediction.experts.name}
             </Link>
           )}

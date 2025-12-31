@@ -75,5 +75,36 @@ export async function getCurrentExpert() {
   return getExpertById(user.id)
 }
 
+export async function getExpertByUsername(username: string) {
+  try {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from("experts")
+      .select(`
+        *,
+        expert_stats (
+          total_predictions,
+          correct_predictions,
+          accuracy_rate,
+          verivo_score
+        )
+      `)
+      .eq("username", username)
+      .single()
+
+    if (error) {
+      // console.error("Database error in getExpertByUsername:", error.message)
+      return null
+    }
+
+    return data
+  } catch (err) {
+    console.error("Unexpected error in getExpertByUsername:", err)
+    return null
+  }
+}
+
+
 
 
