@@ -189,16 +189,11 @@ export const VerifiedReportPDF = ({ data }: { data: VerifiedReportData }) => {
                         <View>
                             <Text style={styles.reportTitle}>Verified Performance Report</Text>
                             <Text style={styles.expertName}>
-                                {data.displayName || data.expertName || "Anonymous Expert"}
+                                {data.displayName || data.expertName || "Verified Expert"}
                             </Text>
                             {data.username && (
-                                <Text style={{ fontSize: 14, color: '#7C3AED', marginBottom: 2 }}>
+                                <Text style={{ fontSize: 13, color: '#7C3AED', marginBottom: 2, fontWeight: 'medium' }}>
                                     @{data.username}
-                                </Text>
-                            )}
-                            {data.contributorId && (
-                                <Text style={{ fontSize: 10, color: '#94A3B8', marginBottom: 4 }}>
-                                    (Contributor ID: {data.contributorId})
                                 </Text>
                             )}
                             <Text style={styles.dateText}>
@@ -251,6 +246,11 @@ export const VerifiedReportPDF = ({ data }: { data: VerifiedReportData }) => {
                     <View>
                         <Text style={styles.footerBrand}>VERIVO CREDIBILITY PROTOCOL</Text>
                         <Text style={styles.footerLink}>Verify report at https://verivo.app/verify-report</Text>
+                        {data.contributorId && (
+                            <Text style={{ fontSize: 7, color: '#CBD5E1', marginTop: 2, fontFamily: 'Courier' }}>
+                                Contributor ID: {data.contributorId}
+                            </Text>
+                        )}
                     </View>
                     <Text style={styles.footerHash}>ID: {data.reportId}</Text>
                 </View>
