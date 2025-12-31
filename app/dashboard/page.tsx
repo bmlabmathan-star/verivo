@@ -11,11 +11,9 @@ type VerivoScore = {
   user_id: string
   total_predictions: number
   correct_predictions: number
-  raw_accuracy: number
-  weighted_accuracy: number
-  confidence_factor: number
-  credible_accuracy: number
-  verivo_score: number
+  accuracy_percentage: number
+  verivo_score?: number
+  confidence_factor?: number
 }
 
 // NOTE: DURATION_BUCKETS legacy code removed as new view aggregates per user
@@ -34,23 +32,24 @@ export default async function DashboardPage() {
   // Updated filter param from expert_id to userId to match new action signature
   const predictions = await getPredictions({ userId: user.id })
 
-  // Phase 4: Fetch Verivo Scores (New View)
+  // Phase 4: Fetch Credibility Scores (New View)
   const { data: verivoData } = await supabase
-    .from('user_verivo_scores')
+    .from('user_credibility_scores')
     .select('*')
     .eq('user_id', user.id)
+    .eq('type', 'overall') // Filter to get the overall score row
     .single()
 
-  const scores = verivoData as unknown as VerivoScore | null
+  const scores = verivoData
 
   // No client-side calculation needed. Trust the server view.
 
   // Format stats for display
   // Credible Accuracy -> Accuracy % (User facing)
-  const accuracyAbs = scores?.credible_accuracy || 0
-  const accuracyPercentage = (accuracyAbs * 100).toFixed(1)
+  // New view returns accuracy_percentage directly (e.g. 38.33)
+  const accuracyPercentage = scores?.accuracy_percentage?.toFixed(1) || "0.0"
 
-  // Verivo Score -> Verivo Score
+  // Verivo Score: usage if available in the view, else default to 0
   const verivoScoreDisplay = scores?.verivo_score?.toFixed(2) || "0.00"
 
   const stats = {
@@ -58,6 +57,12 @@ export default async function DashboardPage() {
     correct_predictions: scores?.correct_predictions || 0,
     accuracy_display: `${accuracyPercentage}%`,
     verivo_score: verivoScoreDisplay,
+    // Calculate raw accuracy for display logic if not present in view
+    raw_accuracy: (scores?.total_predictions && scores?.total_predictions > 0)
+      ? (scores.correct_predictions / scores.total_predictions)
+      : 0,
+    // Confidence factor might be missing in new view, default to 0
+    confidence_factor: scores?.confidence_factor || 0
   }
 
   return (
@@ -123,14 +128,14 @@ export default async function DashboardPage() {
                   <p className="text-sm text-gray-400 mb-1">Raw Accuracy (Win Rate)</p>
                   {/* raw_accuracy is decimal, e.g. 0.85 -> 85% */}
                   <p className="text-2xl font-bold text-gray-300">
-                    {scores.raw_accuracy ? (scores.raw_accuracy * 100).toFixed(1) + '%' : '0%'}
+                    {stats.raw_accuracy ? (stats.raw_accuracy * 100).toFixed(1) + '%' : '0%'}
                   </p>
                 </div>
                 <div className="p-4 bg-slate-900/50 border border-white/5 rounded-lg text-center backdrop-blur-sm">
                   <p className="text-sm text-gray-400 mb-1">Confidence Factor</p>
                   {/* confidence_factor is average weight e.g. 0.65 */}
                   <p className="text-2xl font-bold text-gray-300">
-                    {scores.confidence_factor?.toFixed(2) || '0.00'}
+                    {stats.confidence_factor?.toFixed(2) || '0.00'}
                   </p>
                 </div>
               </div>
