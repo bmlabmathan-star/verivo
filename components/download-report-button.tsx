@@ -2,41 +2,53 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { FileText, Loader2, Download } from "lucide-react"
+import { FileText, Loader2 } from "lucide-react"
 import { pdf } from "@react-pdf/renderer"
-import { generateVerifiedReport } from "@/lib/actions/reports"
 import { VerifiedReportPDF, VerifiedReportData } from "@/components/verified-report-pdf"
 
-export function DownloadReportButton() {
+interface DownloadReportButtonProps {
+    userData: {
+        userId: string
+        verivoScore: number
+        accuracy: number
+        confidenceFactor: number
+        totalPredictions: number
+        correctPredictions: number
+    }
+}
+
+export function DownloadReportButton({ userData }: DownloadReportButtonProps) {
     const [loading, setLoading] = useState(false)
 
     const handleDownload = async () => {
         try {
             setLoading(true)
 
-            // 1. Generate Report on Backend (Secure)
-            const { report, expertName } = await generateVerifiedReport()
+            // Generate Client-Side Report ID (Frontend Only Fix)
+            const generatedId = `VR-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+            const generatedAt = new Date().toISOString()
+            const expertName = `Contributor #${userData.userId.slice(0, 4)}`
 
-            // 2. Prepare Data for PDF
+            // Prepare Data for PDF using Dashboard State
             const pdfData: VerifiedReportData = {
-                reportId: report.id,
-                generatedAt: report.generated_at,
+                reportId: generatedId,
+                generatedAt: generatedAt,
                 expertName: expertName,
-                verivoScore: report.verivo_score,
-                credibleAccuracy: report.credible_accuracy,
-                confidenceFactor: report.confidence_factor,
-                totalPredictions: report.total_predictions,
-                correctPredictions: report.correct_predictions
+                verivoScore: userData.verivoScore,
+                credibleAccuracy: userData.accuracy,
+                confidenceFactor: userData.confidenceFactor,
+                totalPredictions: userData.totalPredictions,
+                correctPredictions: userData.correctPredictions
             }
 
-            // 3. Generate PDF Blob Client-Side
+            // Generate PDF Blob Client-Side
             const blob = await pdf(<VerifiedReportPDF data={pdfData} />).toBlob()
 
-            // 4. Trigger Download
+            // Trigger Download
             const url = URL.createObjectURL(blob)
             const link = document.createElement('a')
             link.href = url
-            link.download = `Verivo_Report_${report.id}.pdf`
+            link.download = `Verivo_Report_${generatedId}.pdf`
             document.body.appendChild(link)
             link.click()
             document.body.removeChild(link)
@@ -44,11 +56,15 @@ export function DownloadReportButton() {
 
         } catch (error) {
             console.error("Download failed:", error)
-            alert("Failed to generate verified report. Please ensure you are logged in and have verified metrics.")
+            alert("Failed to generate report. Please try again.")
         } finally {
             setLoading(false)
         }
     }
+
+    // Only show button if user has at least a basic presence (id exists)
+    // We allow generation even with 0 score if displayed on dashboard
+    if (!userData.userId) return null
 
     return (
         <Button

@@ -141,7 +141,16 @@ export default async function DashboardPage() {
       <Card className="mb-8 glass-card border-white/10">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle>Your Credibility & Performance</CardTitle>
-          <DownloadReportButton />
+          <DownloadReportButton
+            userData={{
+              userId: user.id,
+              verivoScore: verivoScoreVal,
+              accuracy: parseFloat(accuracyPercentage),
+              confidenceFactor: confidenceFactorVal,
+              totalPredictions: stats.total_predictions,
+              correctPredictions: stats.correct_predictions
+            }}
+          />
         </CardHeader>
         <CardContent>
           {scores ? (
