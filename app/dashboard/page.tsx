@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { PredictionCard } from "@/components/prediction-card"
 import { ShareScoreButton } from "@/components/share-score-button"
+import { DownloadReportButton } from "@/components/download-report-button"
 
 type VerivoScore = {
   user_id: string
@@ -138,8 +139,9 @@ export default async function DashboardPage() {
 
       {/* Performance Detail Card */}
       <Card className="mb-8 glass-card border-white/10">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle>Your Credibility & Performance</CardTitle>
+          <DownloadReportButton />
         </CardHeader>
         <CardContent>
           {scores ? (
