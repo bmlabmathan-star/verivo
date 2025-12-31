@@ -33,24 +33,41 @@ export default async function DashboardPage() {
   const predictions = await getPredictions({ userId: user.id })
 
   // Phase 4: Fetch Credibility Scores (New View)
-  const { data: verivoData } = await supabase
-    .from('user_credibility_scores')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('type', 'overall') // Filter to get the overall score row
-    .single()
+  // Phase 4: Fetch Credibility Scores (New Views)
+  // We fetch from specialized views for Verivo Score and Confidence Factor
+  // while keeping the main stats from user_credibility_scores
+  const [
+    { data: credibilityData },
+    { data: scoreData },
+    { data: confidenceData }
+  ] = await Promise.all([
+    supabase
+      .from('user_credibility_scores')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('type', 'overall') // Filter to get the overall score row
+      .single(),
+    supabase
+      .from('user_verivo_scores')
+      .select('verivo_score')
+      .eq('user_id', user.id)
+      .single(),
+    supabase
+      .from('user_confidence_factor')
+      .select('confidence_factor')
+      .eq('user_id', user.id)
+      .single()
+  ])
 
-  const scores = verivoData
+  const scores = credibilityData
 
-  // No client-side calculation needed. Trust the server view.
+  // Extract values from specialized views
+  const verivoScoreVal = scoreData?.verivo_score || 0
+  const confidenceFactorVal = confidenceData?.confidence_factor || 0
 
   // Format stats for display
-  // Credible Accuracy -> Accuracy % (User facing)
-  // New view returns accuracy_percentage directly (e.g. 38.33)
   const accuracyPercentage = scores?.accuracy_percentage?.toFixed(1) || "0.0"
-
-  // Verivo Score: usage if available in the view, else default to 0
-  const verivoScoreDisplay = scores?.verivo_score?.toFixed(2) || "0.00"
+  const verivoScoreDisplay = verivoScoreVal.toFixed(2)
 
   const stats = {
     total_predictions: scores?.total_predictions || 0,
@@ -61,8 +78,8 @@ export default async function DashboardPage() {
     raw_accuracy: (scores?.total_predictions && scores?.total_predictions > 0)
       ? (scores.correct_predictions / scores.total_predictions)
       : 0,
-    // Confidence factor might be missing in new view, default to 0
-    confidence_factor: scores?.confidence_factor || 0
+    // Use the explicitly fetched confidence factor
+    confidence_factor: confidenceFactorVal
   }
 
   return (
