@@ -87,8 +87,13 @@ export default function CreatePredictionPage() {
     const INDICES = [
         { label: "S&P 500 (US)", value: "^GSPC" },
         { label: "Nasdaq 100 (US)", value: "^NDX" },
+        { label: "Dow Jones (US)", value: "^DJI" },
         { label: "FTSE 100 (UK)", value: "^FTSE" },
         { label: "DAX 40 (EU)", value: "^GDAXI" },
+        { label: "CAC 40 (EU)", value: "^FCHI" },
+        { label: "IBEX 35 (EU)", value: "^IBEX" },
+        { label: "Nikkei 225 (Japan)", value: "^N225" },
+        { label: "Hang Seng (HK)", value: "^HSI" },
         { label: "NIFTY 50 (India)", value: "^NSEI" },
         { label: "BANK NIFTY (India)", value: "^NSEBANK" },
     ]
@@ -221,9 +226,11 @@ export default function CreatePredictionPage() {
                 finalCategory = "Indices"
 
                 // Derive Region
-                if (['^GSPC', '^NDX'].includes(globalIdentifier)) finalRegion = "USA"
+                if (['^GSPC', '^NDX', '^DJI'].includes(globalIdentifier)) finalRegion = "USA"
                 else if (globalIdentifier === '^FTSE') finalRegion = "UK"
-                else if (globalIdentifier === '^GDAXI') finalRegion = "EU"
+                else if (['^GDAXI', '^FCHI', '^IBEX'].includes(globalIdentifier)) finalRegion = "EU"
+                else if (globalIdentifier === '^N225') finalRegion = "Japan"
+                else if (globalIdentifier === '^HSI') finalRegion = "Hong Kong"
                 else if (globalIdentifier.includes('NSE')) finalRegion = "India"
                 else finalRegion = "Global"
 

@@ -28,7 +28,22 @@ const MARKET_CONFIG: Record<string, MarketConfig> = {
     // India
     '^NSEI': { tz: 'Asia/Kolkata', openH: 9, openM: 15, closeH: 15, closeM: 30, name: 'NIFTY', tzLabel: 'IST' },
     '^NSEBANK': { tz: 'Asia/Kolkata', openH: 9, openM: 15, closeH: 15, closeM: 30, name: 'BANK NIFTY', tzLabel: 'IST' },
-    '^BSESN': { tz: 'Asia/Kolkata', openH: 9, openM: 15, closeH: 15, closeM: 30, name: 'SENSEX', tzLabel: 'IST' }
+    '^BSESN': { tz: 'Asia/Kolkata', openH: 9, openM: 15, closeH: 15, closeM: 30, name: 'SENSEX', tzLabel: 'IST' },
+
+    // Japan
+    '^N225': { tz: 'Asia/Tokyo', openH: 9, openM: 0, closeH: 15, closeM: 0, name: 'Nikkei 225', tzLabel: 'JST' },
+
+    // Hong Kong
+    '^HSI': { tz: 'Asia/Hong_Kong', openH: 9, openM: 30, closeH: 16, closeM: 0, name: 'Hang Seng', tzLabel: 'HKT' },
+
+    // France
+    '^FCHI': { tz: 'Europe/Paris', openH: 9, openM: 0, closeH: 17, closeM: 30, name: 'CAC 40', tzLabel: 'Paris time' },
+
+    // USA (Dow Jones)
+    '^DJI': { tz: 'America/New_York', openH: 9, openM: 30, closeH: 16, closeM: 0, name: 'Dow Jones', tzLabel: 'New York time' },
+
+    // Spain
+    '^IBEX': { tz: 'Europe/Madrid', openH: 9, openM: 0, closeH: 17, closeM: 30, name: 'IBEX 35', tzLabel: 'Madrid time' }
 }
 
 const DEFAULT_MARKET: MarketConfig = MARKET_CONFIG['US']
