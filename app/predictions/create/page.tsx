@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { supabase } from "@/lib/supabaseClient"
 import { TrendingUp, TrendingDown } from "lucide-react"
+import { HIERARCHICAL_STOCKS } from "@/lib/stocks"
 
 export default function CreatePredictionPage() {
     const router = useRouter()
@@ -55,16 +56,15 @@ export default function CreatePredictionPage() {
 
     // Map countries to major exchanges
     const exchangesByCountry: Record<string, string[]> = {
-        "USA": ["NYSE", "NASDAQ", "AMEX", "Other"],
+        "USA": ["NASDAQ", "NYSE", "Other"],
         "India": ["NSE", "BSE", "Other"],
-        "UK": ["LSE", "Other"],
-        "Japan": ["TSE", "Other"],
-        "China": ["SSE", "SZSE", "HKEX", "Other"],
-        "Germany": ["XETRA", "FWB", "Other"],
-        "Canada": ["TSX", "TSX-V", "Other"],
-        "Australia": ["ASX", "Other"],
-        "Austria": ["WBAG", "Other"],
-        "France": ["Euronext", "Other"],
+        "UK": ["London Stock Exchange", "Other"],
+        "Japan": ["Tokyo Stock Exchange", "Other"],
+        "China": ["Shanghai", "Shenzhen", "Other"],
+        "Germany": ["Xetra", "Other"],
+        "Canada": ["Toronto Stock Exchange", "Other"],
+        "Austria": ["Vienna Stock Exchange", "Other"],
+        "France": ["Euronext Paris", "Other"],
         "Global / Other": ["Other"],
     }
 
@@ -285,6 +285,9 @@ export default function CreatePredictionPage() {
                     marketType,
                     globalAsset,
                     globalIdentifier,
+                    assetName, // Explicitly pass for stocks
+                    exchange,  // Explicitly pass for validation
+                    country,   // Explicitly pass for asset key gen
                     timeframe: predictionMode === 'opening' ? 'opening' : timeframe,
                     duration_minutes: durationMins, // Explicitly passed
                     prediction_type: predictionMode
@@ -464,13 +467,28 @@ export default function CreatePredictionPage() {
 
                                 {stockAssetType && (
                                     <div className="space-y-3 animate-in fade-in">
-                                        <Label className="text-gray-200 text-base">Asset Name / Ticker</Label>
-                                        <Input
-                                            placeholder={stockAssetType === "Stock" ? "e.g. AAPL, Reliance, Tesla..." : "e.g. Nifty 50, S&P 500..."}
-                                            value={assetName}
-                                            onChange={(e) => setAssetName(e.target.value)}
-                                            className="bg-white/5 border-white/10 text-white placeholder:text-gray-600"
-                                        />
+                                        <Label className="text-gray-200 text-base">Select Stock / Asset Name</Label>
+
+                                        {/* Use Hierarchy if available for Stocks, otherwise Input */}
+                                        {stockAssetType === "Stock" && country && exchange && HIERARCHICAL_STOCKS[country]?.[exchange] ? (
+                                            <Select value={assetName} onValueChange={setAssetName}>
+                                                <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                                                    <SelectValue placeholder="Select Stock" />
+                                                </SelectTrigger>
+                                                <SelectContent className="max-h-[300px]">
+                                                    {HIERARCHICAL_STOCKS[country][exchange].map((s) => (
+                                                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                                                    ))}
+                                                    {/* Allow custom fallback if needed, but for now enforcing list */}
+                                                </SelectContent>
+                                            </Select>
+                                        ) : (
+                                            <Input
+                                                placeholder={stockAssetType === "Stock" ? "e.g. AAPL, Reliance, Tesla..." : "e.g. Nifty 50, S&P 500..."}
+                                                value={assetName}
+                                                onChange={(e) => setAssetName(e.target.value)}
+                                                className="bg-white/5 border-white/10 text-white placeholder:text-gray-600"
+                                            />
                                     </div>
                                 )}
                             </div>

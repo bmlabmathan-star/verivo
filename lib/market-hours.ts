@@ -43,7 +43,21 @@ const MARKET_CONFIG: Record<string, MarketConfig> = {
     '^DJI': { tz: 'America/New_York', openH: 9, openM: 30, closeH: 16, closeM: 0, name: 'Dow Jones', tzLabel: 'New York time' },
 
     // Spain
-    '^IBEX': { tz: 'Europe/Madrid', openH: 9, openM: 0, closeH: 17, closeM: 30, name: 'IBEX 35', tzLabel: 'Madrid time' }
+    '^IBEX': { tz: 'Europe/Madrid', openH: 9, openM: 0, closeH: 17, closeM: 30, name: 'IBEX 35', tzLabel: 'Madrid time' },
+
+    // --- Exchange Mappings for Stocks ---
+    'NASDAQ': { tz: 'America/New_York', openH: 9, openM: 30, closeH: 16, closeM: 0, name: 'NASDAQ', tzLabel: 'New York time' },
+    'NYSE': { tz: 'America/New_York', openH: 9, openM: 30, closeH: 16, closeM: 0, name: 'NYSE', tzLabel: 'New York time' },
+    'London Stock Exchange': { tz: 'Europe/London', openH: 8, openM: 0, closeH: 16, closeM: 30, name: 'London Stock Exchange', tzLabel: 'London time' },
+    'Xetra': { tz: 'Europe/Berlin', openH: 9, openM: 0, closeH: 17, closeM: 30, name: 'Xetra', tzLabel: 'Berlin time' },
+    'Euronext Paris': { tz: 'Europe/Paris', openH: 9, openM: 0, closeH: 17, closeM: 30, name: 'Euronext Paris', tzLabel: 'Paris time' },
+    'Vienna Stock Exchange': { tz: 'Europe/Vienna', openH: 9, openM: 0, closeH: 17, closeM: 30, name: 'Vienna Stock Exchange', tzLabel: 'Vienna time' },
+    'Shanghai': { tz: 'Asia/Shanghai', openH: 9, openM: 30, closeH: 15, closeM: 0, name: 'Shanghai Stock Exchange', tzLabel: 'China time' }, // Simplified (ignoring lunch break for v1)
+    'Shenzhen': { tz: 'Asia/Shanghai', openH: 9, openM: 30, closeH: 15, closeM: 0, name: 'Shenzhen Stock Exchange', tzLabel: 'China time' },
+    'Toronto Stock Exchange': { tz: 'America/Toronto', openH: 9, openM: 30, closeH: 16, closeM: 0, name: 'Toronto Stock Exchange', tzLabel: 'Toronto time' },
+    'Tokyo Stock Exchange': { tz: 'Asia/Tokyo', openH: 9, openM: 0, closeH: 15, closeM: 0, name: 'Tokyo Stock Exchange', tzLabel: 'JST' },
+    'NSE': { tz: 'Asia/Kolkata', openH: 9, openM: 15, closeH: 15, closeM: 30, name: 'NSE', tzLabel: 'IST' },
+    'BSE': { tz: 'Asia/Kolkata', openH: 9, openM: 15, closeH: 15, closeM: 30, name: 'BSE', tzLabel: 'IST' }
 }
 
 const DEFAULT_MARKET: MarketConfig = MARKET_CONFIG['US']

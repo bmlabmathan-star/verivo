@@ -14,7 +14,9 @@ export async function POST(request: Request) {
             globalAsset,
             globalIdentifier,
             timeframe, // passed from frontend e.g. "5m", "1h", or "opening"
-            prediction_type // "intraday" or "opening"
+            prediction_type, // "intraday" or "opening"
+            assetName,
+            exchange
         } = body
 
         // Get Auth Token
@@ -100,6 +102,7 @@ export async function POST(request: Request) {
             const c = (region || body.country || "").trim().toLowerCase()
             const s = (globalIdentifier || body.assetName || "").trim().toLowerCase()
             assetKey = `stock:${c}:${s}`
+            // Pass exchange info if available, or just rely on assetKey
         } else if (marketType === 'index') {
             const s = globalIdentifier.trim().toLowerCase()
             assetKey = `index:${s}`
@@ -280,7 +283,6 @@ export async function POST(request: Request) {
                             // Natural Gas -> NG=F (Yahoo)
                             price = await fetchYahooPrice('NG=F')
                             source = 'Yahoo Finance (Future)'
-                            source = 'Yahoo Finance (Future)'
                         }
 
                         if (price !== null) {
@@ -296,15 +298,23 @@ export async function POST(request: Request) {
                     }
                 }
             }
-        } else if (marketType === 'index' && globalIdentifier) {
-            // --- INDICES (Yahoo Finance) ---
+        } else if ((marketType === 'index' && globalIdentifier) || (marketType === 'stock')) {
+            // --- INDICES (Yahoo Finance) OR STOCKS ---
+            let symbol = ""
+            let timeValidationKey = ""
 
-            const symbol = globalIdentifier.trim().toUpperCase()
+            if (marketType === 'index') {
+                symbol = globalIdentifier.trim().toUpperCase()
+                timeValidationKey = symbol
+            } else {
+                // For stocks
+                symbol = (assetName || globalIdentifier || "").trim().toUpperCase()
+                // Use exchange for validation if available (e.g. "NASDAQ", "NYSE"), else fall back to symbol (which might not find config)
+                timeValidationKey = exchange || symbol
+            }
 
             if (prediction_type === 'opening') {
                 // Opening Prediction Logic
-                // 1. Set Reference Price (Last Traded/Previous Close)
-                // We fetch the current price which, if market is closed, is the last close.
                 try {
                     const price = await fetchYahooPrice(symbol)
                     if (price !== null) {
@@ -313,19 +323,17 @@ export async function POST(request: Request) {
                         data_source = 'Yahoo Finance'
                     }
                 } catch (e) {
-                    console.error("Failed to fetch index reference price:", e)
+                    console.error("Failed to fetch index/stock reference price:", e)
                 }
 
-                // 2. Set Target Date to Next Market Open
-                // Use the helper from market-hours
-                target_date = getNextMarketOpenTime(symbol)
+                target_date = getNextMarketOpenTime(timeValidationKey)
                 duration_minutes = 0
 
             } else {
                 // Intraday Logic
                 // Market Hours Validation
                 try {
-                    const check = isIndexMarketOpen(symbol)
+                    const check = isIndexMarketOpen(timeValidationKey)
                     if (!check.isOpen) {
                         return NextResponse.json({
                             error: check.message,
@@ -347,10 +355,10 @@ export async function POST(request: Request) {
                         reference_time = new Date().toISOString()
                         data_source = 'Yahoo Finance'
                     } else {
-                        console.warn(`Could not fetch index price for ${symbol} at creation.`)
+                        console.warn(`Could not fetch price for ${symbol} at creation.`)
                     }
                 } catch (e) {
-                    console.error("Failed to fetch index price:", e)
+                    console.error("Failed to fetch stock/index price:", e)
                 }
             }
         }
