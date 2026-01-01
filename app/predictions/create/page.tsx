@@ -486,9 +486,10 @@ export default function CreatePredictionPage() {
                                             <Input
                                                 placeholder={stockAssetType === "Stock" ? "e.g. AAPL, Reliance, Tesla..." : "e.g. Nifty 50, S&P 500..."}
                                                 value={assetName}
-                                                onChange={(e) => setAssetName(e.target.value)}
+                                                onChange={(e: any) => setAssetName(e.target.value)}
                                                 className="bg-white/5 border-white/10 text-white placeholder:text-gray-600"
                                             />
+                                        )}
                                     </div>
                                 )}
                             </div>
