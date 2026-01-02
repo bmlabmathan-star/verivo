@@ -297,7 +297,7 @@ export const VerifiedReportPDF = ({ data }: { data: VerifiedReportData }) => {
                 {/* Top Header Bar */}
                 <View style={styles.header}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        {/* Logo Icon */}
+                        {/* Logo Icon - Flattened for PDF compatibility */}
                         <Svg width="32" height="32" viewBox="0 0 40 40">
                             <Path
                                 d="M20 38C20 38 4 28 4 14V8L20 2L36 8V14C36 28 20 38 20 38Z"
@@ -347,33 +347,31 @@ export const VerifiedReportPDF = ({ data }: { data: VerifiedReportData }) => {
                             </Text>
                         </View>
 
-                        {/* Seal Badge */}
+                        {/* Seal Badge - Simplified paths (removed G transform) */}
                         <View style={{ alignItems: 'center' }}>
                             <Svg width="50" height="50" viewBox="0 0 100 100">
                                 <Circle cx="50" cy="50" r="48" stroke="#10B981" strokeWidth="2" fill="#F0FDF4" />
                                 <Circle cx="50" cy="50" r="40" stroke="#10B981" strokeWidth="1" strokeDasharray="4 2" fill="none" />
-                                <G transform="translate(30, 30) scale(1)">
-                                    <Path
-                                        d="M20 38C20 38 4 28 4 14V8L20 2L36 8V14C36 28 20 38 20 38Z"
-                                        stroke="#10B981"
-                                        strokeWidth="4"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        fill="none"
-                                    />
-                                    <Path
-                                        d="M13 18L18 23L27 13"
-                                        stroke="#10B981"
-                                        strokeWidth="4"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    />
-                                </G>
+                                {/* Translated Paths (+30, +30) to avoid G transform issues */}
+                                <Path
+                                    d="M50 68C50 68 34 58 34 44V38L50 32L66 38V44C66 58 50 68 50 68Z"
+                                    stroke="#10B981"
+                                    strokeWidth="4"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    fill="none"
+                                />
+                                <Path
+                                    d="M43 48L48 53L57 43"
+                                    stroke="#10B981"
+                                    strokeWidth="4"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
                             </Svg>
                             <Text style={{ fontSize: 8, color: '#166534', fontWeight: 'bold', marginTop: 4, textTransform: 'uppercase' }}>Verified</Text>
                         </View>
                     </View>
-
 
                     {/* Today's Performance Section */}
                     {data.todayStats && (
