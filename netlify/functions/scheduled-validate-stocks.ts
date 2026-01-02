@@ -65,14 +65,15 @@ const scheduledTask = async (event: any, context: any) => {
                 // Handle Opening Predictions (duration_minutes is null or 0)
                 // For Opening, we really need a logical target_date. 
                 // If target_date is set, we use it. 
-                if (pred.target_date) {
+                // If duration is set (Intraday), strictly calculate unlock time.
+                // Priority: reference_time + duration_minutes.
+                // We ignore target_date because it might be mis-calculated or drifting.
+                if (pred.duration_minutes && pred.duration_minutes > 0 && pred.reference_time) {
+                    const refTime = new Date(pred.reference_time).getTime();
+                    unlockTime = refTime + (pred.duration_minutes * 60000);
+                } else if (pred.target_date) {
+                    // Fallback for Opening predictions or if duration is 0
                     unlockTime = new Date(pred.target_date).getTime();
-                } else if (pred.duration_minutes && pred.duration_minutes > 0) {
-                    // Standard duration fallback if target_date missing (unlikely)
-                    if (pred.reference_time) {
-                        const refTime = new Date(pred.reference_time).getTime();
-                        unlockTime = refTime + (pred.duration_minutes * 60000);
-                    }
                 }
 
                 // If we still don't have a valid unlock time, we might skip

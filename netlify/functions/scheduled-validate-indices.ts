@@ -37,9 +37,8 @@ const scheduledTask = async (event: any, context: any) => {
             try {
                 if (!pred.reference_time) continue;
 
-                // Duration / Target Logic (Standard)
                 let unlockTime = 0;
-                if (pred.duration_minutes && pred.duration_minutes > 0) {
+                if (pred.duration_minutes && pred.duration_minutes > 0 && pred.reference_time) {
                     const refTime = new Date(pred.reference_time).getTime();
                     unlockTime = refTime + (pred.duration_minutes * 60000);
                 } else if (pred.target_date) {

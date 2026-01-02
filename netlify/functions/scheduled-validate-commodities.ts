@@ -49,13 +49,13 @@ const scheduledTask = async (event: any, context: any) => {
                 // Existing framework relies on duration_minutes or target_date.
 
                 let unlockTime = 0;
-                if (pred.duration_minutes && pred.duration_minutes > 0) {
+                // Strict duration check for Intraday/Fixed Duration
+                if (pred.duration_minutes && pred.duration_minutes > 0 && pred.reference_time) {
                     unlockTime = refTime + (pred.duration_minutes * 60000);
                 } else if (pred.target_date) {
                     unlockTime = new Date(pred.target_date).getTime();
                 } else {
-                    // Fallback check
-                    continue;
+                    continue; // Cannot evaluate
                 }
 
                 // Determine Symbol
