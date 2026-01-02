@@ -55,10 +55,10 @@ export function Navbar() {
         <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
           <VerivoIcon className="w-8 h-8" color="#7C3AED" />
           <div className="flex flex-col">
-            <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white leading-none">
+            <span className="font-bold text-xl tracking-tight text-white leading-none">
               Verivo
             </span>
-            <span className="text-[10px] text-gray-500 font-medium tracking-wide uppercase mt-0.5">
+            <span className="text-[10px] text-gray-400 font-medium tracking-wide uppercase mt-0.5">
               Trust the data, not the hype.
             </span>
           </div>
