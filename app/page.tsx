@@ -5,7 +5,7 @@ import { StartContributingButton } from "@/components/start-contributing-button"
 
 export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4 py-20">
+    <div className="flex flex-col items-center justify-center min-h-screen px-4 py-20 hero-bg">
       {/* Hero Section */}
       <div className="text-center max-w-4xl mx-auto mb-16 space-y-8">
         <h1 className="text-6xl md:text-8xl font-black text-white mb-6 drop-shadow-2xl tracking-tighter animate-in fade-in slide-in-from-top-10 duration-1000">

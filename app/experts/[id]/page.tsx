@@ -84,27 +84,30 @@ export default async function ExpertProfilePage({
       </div>
 
       {/* 1. Header Section: Identity & Primary Score */}
-      <div className="flex flex-col md:flex-row justify-between items-end mb-12 border-b border-white/10 pb-8">
-        <div className="flex items-center gap-6">
-          <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-            <ShieldCheck className="w-10 h-10 text-white/20" />
+      <div className="flex flex-col md:flex-row justify-between items-end mb-12 expert-banner-bg p-8 rounded-2xl shadow-2xl border border-white/10 relative overflow-hidden">
+        {/* Glow Element */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 blur-[100px] rounded-full pointer-events-none" />
+
+        <div className="flex items-center gap-6 relative z-10">
+          <div className="w-20 h-20 rounded-2xl bg-black/40 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner">
+            <ShieldCheck className="w-10 h-10 text-purple-200" />
           </div>
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-white tracking-tight">{displayName}</h1>
-              <span className="bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">
+              <h1 className="text-3xl font-black text-white tracking-tight drop-shadow-md">{displayName}</h1>
+              <span className="bg-green-500/20 text-green-300 border border-green-500/30 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider backdrop-blur-sm">
                 Verified
               </span>
             </div>
-            <p className="text-gray-400 text-sm max-w-md">
+            <p className="text-gray-300 text-sm max-w-md font-medium text-shadow-sm">
               Credibility protocol member since 2024. Establishing trust through verified predictive performance.
             </p>
           </div>
         </div>
 
-        <div className="text-right mt-6 md:mt-0">
-          <div className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">Verivo Credibility Score</div>
-          <div className="text-6xl font-black text-white tracking-tighter">
+        <div className="text-right mt-6 md:mt-0 relative z-10">
+          <div className="text-[10px] text-purple-200 uppercase font-black tracking-widest mb-1 opacity-80">Verivo Credibility Score</div>
+          <div className="text-6xl font-black text-white tracking-tighter drop-shadow-xl flex items-center gap-2 justify-end">
             {stats.verivo_score.toFixed(2)}
           </div>
         </div>

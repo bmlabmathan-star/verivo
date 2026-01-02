@@ -89,11 +89,18 @@ export default async function DashboardPage() {
 
   return (
     <div className="container py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold text-white">Expert Dashboard</h1>
-        <Link href="/predictions/create">
-          <Button>+ Create Forecast</Button>
-        </Link>
+      <div className="flex justify-between items-center mb-8 dashboard-header-bg p-8 rounded-2xl border border-white/10 relative overflow-hidden shadow-2xl">
+        <div className="relative z-10">
+          <h1 className="text-4xl font-bold text-white mb-2">Expert Dashboard</h1>
+          <p className="text-white/60">Manage your predictive portfolio.</p>
+        </div>
+        <div className="relative z-10">
+          <Link href="/predictions/create">
+            <Button className="bg-purple-600 hover:bg-purple-500 text-white border-0 shadow-lg shadow-purple-900/20 supports-[backdrop-filter]:bg-purple-600/20 supports-[backdrop-filter]:backdrop-blur-md supports-[backdrop-filter]:border supports-[backdrop-filter]:border-purple-500/50">
+              + Create Forecast
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}
