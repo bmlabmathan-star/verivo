@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabaseClient"
 import { useEffect, useState } from "react"
 import { User } from "@supabase/supabase-js"
+import { VerivoLogo } from "@/components/verivo-logo"
 
 export function Navbar() {
   const pathname = usePathname()
@@ -51,12 +52,8 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-950/80 backdrop-blur supports-[backdrop-filter]:bg-slate-950/60">
       <div className="container flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-2xl">📊</span>
-          <div className="flex flex-col">
-            <span className="text-xl font-bold text-purple-600">Verivo</span>
-            <span className="text-xs text-gray-500 -mt-1">Trust the data, not the hype.</span>
-          </div>
+        <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+          <VerivoLogo className="h-8" iconClassName="w-8 h-8" />
         </Link>
 
         <div className="flex items-center gap-6">

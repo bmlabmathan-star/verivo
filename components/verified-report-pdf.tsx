@@ -1,7 +1,7 @@
 "use client"
 
 /* eslint-disable jsx-a11y/alt-text */
-import { Document, Page, Text, View, StyleSheet, Font, Svg, Polyline, Rect } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Font, Svg, Polyline, Rect, Path, G, Circle } from '@react-pdf/renderer'
 
 // Define premium styles
 const styles = StyleSheet.create({
@@ -296,7 +296,35 @@ export const VerifiedReportPDF = ({ data }: { data: VerifiedReportData }) => {
 
                 {/* Top Header Bar */}
                 <View style={styles.header}>
-                    <Text style={styles.logoText}>Verivo</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        {/* Logo Icon */}
+                        <Svg width="32" height="32" viewBox="0 0 40 40">
+                            <Path
+                                d="M20 38C20 38 4 28 4 14V8L20 2L36 8V14C36 28 20 38 20 38Z"
+                                stroke="#FFFFFF"
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                fill="none"
+                            />
+                            <Path
+                                d="M13 18L18 23L27 13"
+                                stroke="#FFFFFF"
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        </Svg>
+                        <Text style={{
+                            color: '#FFFFFF',
+                            fontSize: 28,
+                            fontWeight: 'bold',
+                            letterSpacing: 1,
+                            marginLeft: 10
+                        }}>
+                            Verivo
+                        </Text>
+                    </View>
                     <Text style={styles.tagline}>Trust the data, not the hype.</Text>
                 </View>
 
@@ -318,8 +346,31 @@ export const VerifiedReportPDF = ({ data }: { data: VerifiedReportData }) => {
                                 Generated on {new Date(data.generatedAt).toLocaleDateString()}
                             </Text>
                         </View>
-                        <View style={styles.badge}>
-                            <Text style={styles.badgeText}>Verified by Verivo</Text>
+
+                        {/* Seal Badge */}
+                        <View style={{ alignItems: 'center' }}>
+                            <Svg width="50" height="50" viewBox="0 0 100 100">
+                                <Circle cx="50" cy="50" r="48" stroke="#10B981" strokeWidth="2" fill="#F0FDF4" />
+                                <Circle cx="50" cy="50" r="40" stroke="#10B981" strokeWidth="1" strokeDasharray="4 2" fill="none" />
+                                <G transform="translate(30, 30) scale(1)">
+                                    <Path
+                                        d="M20 38C20 38 4 28 4 14V8L20 2L36 8V14C36 28 20 38 20 38Z"
+                                        stroke="#10B981"
+                                        strokeWidth="4"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        fill="none"
+                                    />
+                                    <Path
+                                        d="M13 18L18 23L27 13"
+                                        stroke="#10B981"
+                                        strokeWidth="4"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
+                                </G>
+                            </Svg>
+                            <Text style={{ fontSize: 8, color: '#166534', fontWeight: 'bold', marginTop: 4, textTransform: 'uppercase' }}>Verified</Text>
                         </View>
                     </View>
 
