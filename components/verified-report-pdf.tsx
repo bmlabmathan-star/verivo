@@ -1,7 +1,7 @@
 "use client"
 
 /* eslint-disable jsx-a11y/alt-text */
-import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Font, Svg, Polyline, Rect } from '@react-pdf/renderer'
 
 // Define premium styles
 const styles = StyleSheet.create({
@@ -158,6 +158,19 @@ const styles = StyleSheet.create({
 });
 
 export interface VerifiedReportData {
+    todayStats?: {
+        date: string
+        total: number
+        correct: number
+        accuracy: number
+        status: 'Positive' | 'Neutral' | 'Negative'
+    }
+    history: {
+        date: string
+        accuracy: number
+        total: number
+        correct: number
+    }[]
     reportId: string
     generatedAt: string
     expertName: string | null
@@ -169,6 +182,111 @@ export interface VerifiedReportData {
     confidenceFactor: number
     totalPredictions: number
     correctPredictions: number
+}
+
+// Chart Helpers
+const ChartGrid = ({ width, height, lines = 5 }: { width: number, height: number, lines?: number }) => {
+    return (
+        <View style={{ position: 'absolute', width, height }}>
+            {Array.from({ length: lines + 1 }).map((_, i) => (
+                <View
+                    key={i}
+                    style={{
+                        position: 'absolute',
+                        top: (height / lines) * i,
+                        width: '100%',
+                        height: 1,
+                        backgroundColor: '#E2E8F0'
+                    }}
+                />
+            ))}
+        </View>
+    )
+}
+
+const LineChart = ({ data, width, height }: { data: { date: string, accuracy: number }[], width: number, height: number }) => {
+    if (!data || data.length < 2) return null;
+
+    // Normalize data
+    const maxVal = 100;
+    const minVal = 0;
+    const padding = 10;
+
+    // Points
+    const points = data.map((d, i) => {
+        const x = (i / (data.length - 1)) * width;
+        const y = height - ((d.accuracy - minVal) / (maxVal - minVal)) * height;
+        return `${x},${y}`;
+    }).join(' ');
+
+    return (
+        <View style={{ width, height, position: 'relative' }}>
+            <ChartGrid width={width} height={height} lines={4} />
+            <View style={{ position: 'absolute', top: 0, left: 0 }}>
+                <Text style={{ fontSize: 6, color: '#94A3B8', position: 'absolute', top: -8, left: -15 }}>100%</Text>
+                <Text style={{ fontSize: 6, color: '#94A3B8', position: 'absolute', top: height / 2 - 4, left: -15 }}>50%</Text>
+                <Text style={{ fontSize: 6, color: '#94A3B8', position: 'absolute', top: height - 4, left: -15 }}>0%</Text>
+            </View>
+            <Svg height={height} width={width} viewBox={`0 0 ${width} ${height}`}>
+                <Polyline
+                    points={points}
+                    stroke="#7C3AED"
+                    strokeWidth={2}
+                    fill="none"
+                />
+            </Svg>
+            {/* Dates (Start/End) */}
+            <Text style={{ fontSize: 6, color: '#94A3B8', position: 'absolute', bottom: -10, left: 0 }}>
+                {new Date(data[0].date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            </Text>
+            <Text style={{ fontSize: 6, color: '#94A3B8', position: 'absolute', bottom: -10, right: 0 }}>
+                {new Date(data[data.length - 1].date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            </Text>
+        </View>
+    )
+}
+
+const BarChart = ({ data, width, height }: { data: { date: string, total: number, correct: number }[], width: number, height: number }) => {
+    if (!data || data.length === 0) return null;
+
+    const maxVal = Math.max(...data.map(d => d.total)) || 5; // Avoid div by 0
+    const barWidth = (width / data.length) * 0.6;
+    const gap = (width / data.length) * 0.4;
+
+    return (
+        <View style={{ width, height, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+            <ChartGrid width={width} height={height} lines={4} />
+            {data.map((d, i) => {
+                const totalHeight = (d.total / maxVal) * height;
+                const correctHeight = (d.correct / maxVal) * height;
+
+                return (
+                    <View key={i} style={{ width: barWidth, height: '100%', justifyContent: 'flex-end', position: 'relative' }}>
+                        {/* Total Bar (Background) */}
+                        <View style={{
+                            height: totalHeight,
+                            width: '100%',
+                            backgroundColor: '#E2E8F0',
+                            position: 'absolute',
+                            bottom: 0,
+                            borderTopLeftRadius: 2,
+                            borderTopRightRadius: 2
+                        }} />
+                        {/* Correct Bar (Foreground) */}
+                        <View style={{
+                            height: correctHeight,
+                            width: '100%',
+                            backgroundColor: '#10B981',
+                            position: 'absolute',
+                            bottom: 0,
+                            borderTopLeftRadius: 2,
+                            borderTopRightRadius: 2
+                        }} />
+                    </View>
+                )
+            })}
+        </View>
+    )
 }
 
 export const VerifiedReportPDF = ({ data }: { data: VerifiedReportData }) => {
@@ -205,12 +323,73 @@ export const VerifiedReportPDF = ({ data }: { data: VerifiedReportData }) => {
                         </View>
                     </View>
 
+
+                    {/* Today's Performance Section */}
+                    {data.todayStats && (
+                        <View style={{
+                            marginBottom: 20,
+                            padding: 15,
+                            backgroundColor: '#F8FAFC',
+                            borderRadius: 8,
+                            borderLeftWidth: 4,
+                            borderLeftColor: data.todayStats.status === 'Positive' ? '#10B981' : data.todayStats.status === 'Negative' ? '#EF4444' : '#64748B'
+                        }}>
+                            <Text style={styles.metricLabel}>Today's Performance ({new Date(data.todayStats.date).toLocaleDateString()})</Text>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+                                <View>
+                                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0F172A' }}>{data.todayStats.total}</Text>
+                                    <Text style={{ fontSize: 8, color: '#64748B' }}>FORECASTS</Text>
+                                </View>
+                                <View>
+                                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0F172A' }}>{data.todayStats.correct}</Text>
+                                    <Text style={{ fontSize: 8, color: '#64748B' }}>CORRECT</Text>
+                                </View>
+                                <View>
+                                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#7C3AED' }}>{data.todayStats.accuracy.toFixed(1)}%</Text>
+                                    <Text style={{ fontSize: 8, color: '#64748B' }}>ACCURACY</Text>
+                                </View>
+                                <View style={{ justifyContent: 'center' }}>
+                                    <View style={{
+                                        padding: '4 8',
+                                        borderRadius: 4,
+                                        backgroundColor: data.todayStats.status === 'Positive' ? '#DCFCE7' : data.todayStats.status === 'Negative' ? '#FEE2E2' : '#F1F5F9'
+                                    }}>
+                                        <Text style={{
+                                            fontSize: 9,
+                                            fontWeight: 'bold',
+                                            color: data.todayStats.status === 'Positive' ? '#166534' : data.todayStats.status === 'Negative' ? '#991B1B' : '#475569'
+                                        }}>
+                                            {data.todayStats.status.toUpperCase()} MOMENTUM
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+                        </View>
+                    )}
+
                     {/* Hero: Verivo Score */}
                     <View style={styles.heroCard}>
                         <Text style={styles.heroLabel}>Verivo Credibility Score</Text>
                         <Text style={styles.heroScore}>{data.verivoScore.toFixed(2)}</Text>
-                        <Text style={styles.heroSubtext}>Composite metric of accuracy & difficulty</Text>
+                        <Text style={styles.heroSubtext}>Updated continuously based on verified forecasts.</Text>
                     </View>
+
+                    {/* Visualizations Section */}
+                    {data.history && data.history.length > 0 && (
+                        <View style={{ marginBottom: 30, flexDirection: 'row', gap: 20 }}>
+                            {/* Accuracy Chart */}
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.metricLabel, { marginBottom: 15 }]}>Accuracy Trend (Last 30 Days)</Text>
+                                <LineChart data={data.history.slice(-30).map(h => ({ date: h.date, accuracy: h.accuracy }))} width={220} height={100} />
+                            </View>
+
+                            {/* Volume Chart */}
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.metricLabel, { marginBottom: 15 }]}>Volume & Consistency</Text>
+                                <BarChart data={data.history.slice(-14)} width={220} height={100} />
+                            </View>
+                        </View>
+                    )}
 
                     {/* Secondary Metrics Grid */}
                     <View style={styles.grid}>
@@ -237,6 +416,17 @@ export const VerifiedReportPDF = ({ data }: { data: VerifiedReportData }) => {
                             <Text style={styles.metricLabel}>Correct Forecasts</Text>
                             <Text style={styles.metricValue}>{data.correctPredictions}</Text>
                         </View>
+                    </View>
+
+                    {/* Methodology Section */}
+                    <View style={{ marginTop: 20, paddingTop: 20, borderTopWidth: 1, borderTopColor: '#E2E8F0' }}>
+                        <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#0F172A', marginBottom: 5 }}>METHODOLOGY</Text>
+                        <Text style={{ fontSize: 8, color: '#64748B', lineHeight: 1.5 }}>
+                            This report represents a snapshot of performance based on verified immutable data.
+                            Verivo Score is calculated using a difficulty-weighted algorithm where longer timeframes carry more weight.
+                            Predictions are locked at creation and cannot be edited. "Credible Accuracy" refers to the user's weighted accuracy across all valid completed forecasts.
+                            "Confidence Factor" indicates the average weight of successful predictions.
+                        </Text>
                     </View>
 
                 </View>

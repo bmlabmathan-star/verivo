@@ -17,9 +17,10 @@ interface DownloadReportButtonProps {
         totalPredictions: number
         correctPredictions: number
     }
+    predictions?: any[]
 }
 
-export function DownloadReportButton({ userData }: DownloadReportButtonProps) {
+export function DownloadReportButton({ userData, predictions }: DownloadReportButtonProps) {
     const [loading, setLoading] = useState(false)
 
     const handleDownload = async () => {
@@ -50,6 +51,61 @@ export function DownloadReportButton({ userData }: DownloadReportButtonProps) {
             // Requirement 2: "Full Name \n @username \n (Contributor ID: XXXX)"
             // Let's update the PDF data structure to support this.
 
+            // Process Predictions for Report
+            let todayStats = undefined;
+            let history: { date: string, accuracy: number, total: number, correct: number }[] = [];
+
+            if (predictions && predictions.length > 0) {
+                // Today's Stats
+                const today = new Date().toDateString();
+                const todaysPreds = predictions.filter(p => new Date(p.created_at).toDateString() === today);
+
+                if (todaysPreds.length > 0) {
+                    const total = todaysPreds.length;
+                    const correct = todaysPreds.filter(p => p.outcome === 'Correct').length;
+                    const accuracy = (correct / total) * 100;
+
+                    let status: 'Positive' | 'Neutral' | 'Negative' = 'Neutral';
+                    if (accuracy >= 60) status = 'Positive';
+                    if (accuracy < 40) status = 'Negative';
+
+                    todayStats = {
+                        date: new Date().toISOString(),
+                        total,
+                        correct,
+                        accuracy,
+                        status
+                    };
+                }
+
+                // History (Last 30 Days)
+                const historyMap = new Map<string, { date: string, total: number, correct: number }>();
+
+                predictions.forEach(p => {
+                    if (!p.outcome) return; // Only finished predictions for history
+                    // Use evaluation time if available, else created_at
+                    const dateVal = p.evaluation_time || p.created_at;
+                    const dateKey = new Date(dateVal).toISOString().split('T')[0]; // YYYY-MM-DD
+
+                    if (!historyMap.has(dateKey)) {
+                        historyMap.set(dateKey, { date: dateVal, total: 0, correct: 0 });
+                    }
+
+                    const entry = historyMap.get(dateKey)!;
+                    entry.total += 1;
+                    if (p.outcome === 'Correct') entry.correct += 1;
+                });
+
+                history = Array.from(historyMap.values())
+                    .map(h => ({
+                        date: h.date,
+                        total: h.total,
+                        correct: h.correct,
+                        accuracy: (h.correct / h.total) * 100
+                    }))
+                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            }
+
             // Prepare Data for PDF using Dashboard State
             const pdfData: VerifiedReportData = {
                 reportId: generatedId,
@@ -63,7 +119,9 @@ export function DownloadReportButton({ userData }: DownloadReportButtonProps) {
                 credibleAccuracy: userData.accuracy,
                 confidenceFactor: userData.confidenceFactor,
                 totalPredictions: userData.totalPredictions,
-                correctPredictions: userData.correctPredictions
+                correctPredictions: userData.correctPredictions,
+                todayStats,
+                history
             }
 
             // Generate PDF Blob Client-Side

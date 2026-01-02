@@ -162,6 +162,7 @@ export default async function DashboardPage() {
               totalPredictions: stats.total_predictions,
               correctPredictions: stats.correct_predictions
             }}
+            predictions={predictions}
           />
         </CardHeader>
         <CardContent>
