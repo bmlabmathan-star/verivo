@@ -31,26 +31,6 @@ export function DownloadReportButton({ userData, predictions }: DownloadReportBu
             const generatedId = `VR-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
             const generatedAt = new Date().toISOString()
 
-            // Construct Expert Display Name
-            // Priority: Name > Username > Contributor #ID
-            let expertDisplayName = `Contributor #${userData.userId.slice(0, 4)}`
-            let subText = ""
-
-            if (userData.name) {
-                expertDisplayName = userData.name
-                if (userData.username) subText = `@${userData.username}`
-            } else if (userData.username) {
-                expertDisplayName = `@${userData.username}`
-            }
-
-            // Append implicit ID for trace if needed, but the PDF might handle subtext separately?
-            // For now, let's just pass the best primary name as expertName, and handle specific fields if we update the PDF component
-            // to support separate fields. The PDF currently takes expertName string. 
-            // Let's pass the "Full Name" or "Username" as expertName, and we might need to update VerifiedReportData
-            // to support more fields if we want the specific visual layout requested.
-            // Requirement 2: "Full Name \n @username \n (Contributor ID: XXXX)"
-            // Let's update the PDF data structure to support this.
-
             // Process Predictions for Report
             let todayStats = undefined;
             let history: { date: string, accuracy: number, total: number, correct: number }[] = [];
@@ -110,7 +90,8 @@ export function DownloadReportButton({ userData, predictions }: DownloadReportBu
             const pdfData: VerifiedReportData = {
                 reportId: generatedId,
                 generatedAt: generatedAt,
-                expertName: userData.name || userData.username || `Contributor #${userData.userId.slice(0, 4)}`,
+                // Primary Identifier: Name or Username or Generic Title. NEVER "Contributor #ID"
+                expertName: userData.name || (userData.username ? `@${userData.username}` : "Verified Expert"),
                 // Pass extra fields for better formatting
                 displayName: userData.name,
                 username: userData.username,
