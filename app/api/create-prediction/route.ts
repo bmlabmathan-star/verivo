@@ -387,9 +387,9 @@ export async function POST(request: Request) {
                 reference_price,
                 reference_time,
                 data_source,
-                duration_minutes: duration_minutes > 0 ? duration_minutes : null, // Store null for Opening (0) if not calc
+                duration_minutes: duration_minutes > 0 ? duration_minutes : 0,
                 market_type: marketType,
-                asset_symbol: globalIdentifier,
+                asset_symbol: (marketType === 'stock' ? (assetName || globalIdentifier) : globalIdentifier),
                 asset_key: assetKey,
                 prediction_type: prediction_type || 'intraday'
             })
