@@ -309,6 +309,14 @@ export async function POST(request: Request) {
             } else {
                 // For stocks
                 symbol = (assetName || globalIdentifier || "").trim().toUpperCase()
+
+                // Enforce Exchange Suffixes (India)
+                if (exchange === 'NSE' && !symbol.endsWith('.NS')) {
+                    symbol += '.NS'
+                } else if (exchange === 'BSE' && !symbol.endsWith('.BO')) {
+                    symbol += '.BO'
+                }
+
                 // Use exchange for validation if available (e.g. "NASDAQ", "NYSE"), else fall back to symbol (which might not find config)
                 timeValidationKey = exchange || symbol
             }
@@ -356,9 +364,15 @@ export async function POST(request: Request) {
                         data_source = 'Yahoo Finance'
                     } else {
                         console.warn(`Could not fetch price for ${symbol} at creation.`)
+                        // Fail if we can't get reference price for intraday
+                        return NextResponse.json({
+                            error: `Unable to fetch current price for ${symbol}. Please check the symbol or try again.`,
+                            code: 'PRICE_FETCH_FAILED'
+                        }, { status: 400 })
                     }
                 } catch (e) {
                     console.error("Failed to fetch stock/index price:", e)
+                    return NextResponse.json({ error: "Failed to fetch stock price." }, { status: 500 })
                 }
             }
         }

@@ -59,6 +59,16 @@ const scheduledTask = async (event: any, context: any) => {
                 // Normalization
                 symbol = symbol.toUpperCase();
 
+                // 2a. Heuristic Repair for India (NSE/BSE)
+                // If the symbol lacks suffix and we know it's India, we append it.
+                if (pred.asset_key && pred.asset_key.toLowerCase().includes(':india:')) {
+                    if (/^\d+$/.test(symbol)) {
+                        symbol += '.BO'; // Numeric -> BSE
+                    } else if (/^[A-Z]+$/.test(symbol)) {
+                        symbol += '.NS'; // Alphabetic -> NSE
+                    }
+                }
+
                 // Check Timimg / Unlock
                 let unlockTime = 0;
 
@@ -88,6 +98,8 @@ const scheduledTask = async (event: any, context: any) => {
 
                 if (nowMs < unlockTime) continue;
 
+                const isOverdue = (nowMs - unlockTime) > (60 * 60 * 1000); // 1 hour past unlock
+
                 // --- Helper Fetch Logic (Yahoo) ---
                 const getPrice = async () => {
                     try {
@@ -112,6 +124,13 @@ const scheduledTask = async (event: any, context: any) => {
 
                 if (final_price === null || isNaN(final_price)) {
                     console.log(`Final price unavailable for ${symbol}`);
+                    if (isOverdue) {
+                        console.log(`Marking ${pred.id} as Data Unavailable (Price fetch failed, overdue)`);
+                        await supabase.from('predictions').update({
+                            outcome: 'Data Unavailable',
+                            evaluation_time: now.toISOString()
+                        }).eq('id', pred.id);
+                    }
                     continue;
                 }
 
@@ -121,6 +140,13 @@ const scheduledTask = async (event: any, context: any) => {
                 // If null, we can't judge direction.
                 if (pred.reference_price === null) {
                     console.log(`Skipping pred ${pred.id}: No reference price.`);
+                    if (isOverdue) {
+                        console.log(`Marking ${pred.id} as Data Unavailable (No Reference Price, overdue)`);
+                        await supabase.from('predictions').update({
+                            outcome: 'Data Unavailable',
+                            evaluation_time: now.toISOString()
+                        }).eq('id', pred.id);
+                    }
                     continue;
                 }
 
