@@ -329,9 +329,17 @@ export async function POST(request: Request) {
                         reference_price = price
                         reference_time = new Date().toISOString()
                         data_source = 'Yahoo Finance'
+                    } else {
+                        // Strict Check: Do not allow Opening prediction if we can't get a base price (e.g. Prev Close)
+                        console.warn(`Could not fetch opening reference price for ${symbol}.`)
+                        return NextResponse.json({
+                            error: `Unable to fetch reference data for ${symbol}. Please try again later.`,
+                            code: 'PRICE_FETCH_FAILED'
+                        }, { status: 400 })
                     }
                 } catch (e) {
                     console.error("Failed to fetch index/stock reference price:", e)
+                    return NextResponse.json({ error: "Failed to fetch reference price." }, { status: 500 })
                 }
 
                 target_date = getNextMarketOpenTime(timeValidationKey)
@@ -523,27 +531,54 @@ function getUSOpeningReference() {
 }
 
 // Helper for Yahoo Finance
-async function fetchYahooPrice(ticker: string): Promise<number | null> {
-    try {
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1m&range=1d`
-        const response = await fetch(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            },
-            cache: 'no-store'
-        })
+async function fetchYahooPrice(ticker: string, retries = 3): Promise<number | null> {
+    let attempt = 0;
+    while (attempt < retries) {
+        try {
+            if (attempt > 0) await new Promise(r => setTimeout(r, 1000));
 
-        if (!response.ok) return null
+            const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1m&range=1d`
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                },
+                cache: 'no-store'
+            })
 
-        const data = await response.json()
-        const meta = data?.chart?.result?.[0]?.meta
+            if (response.ok) {
+                const data = await response.json()
+                const result = data?.chart?.result?.[0]
+                const meta = result?.meta
 
-        if (meta?.regularMarketPrice) {
-            return parseFloat(meta.regularMarketPrice)
+                let price = null
+                if (meta?.regularMarketPrice !== undefined && meta?.regularMarketPrice !== null) {
+                    price = parseFloat(meta.regularMarketPrice)
+                }
+
+                // BSE Fallback (Same as Validator)
+                if (ticker.endsWith('.BO') && (price === null || isNaN(price))) {
+                    // Try Last Traded
+                    const quotes = result?.indicators?.quote?.[0]
+                    if (quotes?.close && Array.isArray(quotes.close)) {
+                        for (let i = quotes.close.length - 1; i >= 0; i--) {
+                            if (quotes.close[i] !== null && quotes.close[i] !== undefined) {
+                                price = parseFloat(quotes.close[i])
+                                break
+                            }
+                        }
+                    }
+                    // Try Previous Close
+                    if ((price === null || isNaN(price)) && meta?.chartPreviousClose) {
+                        price = parseFloat(meta.chartPreviousClose)
+                    }
+                }
+
+                if (price !== null && !isNaN(price)) return price
+            }
+        } catch (e) {
+            console.error(`Yahoo fetch error (Attempt ${attempt + 1}):`, e)
         }
-        return null
-    } catch (e) {
-        console.error("Yahoo fetch error:", e)
-        return null
+        attempt++;
     }
+    return null
 }

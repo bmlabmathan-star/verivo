@@ -101,36 +101,86 @@ const scheduledTask = async (event: any, context: any) => {
                 const isOverdue = (nowMs - unlockTime) > (60 * 60 * 1000); // 1 hour past unlock
 
                 // --- Helper Fetch Logic (Yahoo) ---
-                const getPrice = async () => {
-                    try {
-                        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1m&range=1d`;
-                        const res = await fetch(url, {
-                            headers: {
-                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                            },
-                        });
+                const getPrice = async (targetSymbol: string, maxRetries = 3): Promise<number | null> => {
+                    let attempt = 0;
+                    while (attempt < maxRetries) {
+                        try {
+                            if (attempt > 0) await new Promise(r => setTimeout(r, 1500)); // Short delay on retry
 
-                        if (res.ok) {
-                            const d = await res.json();
-                            const meta = d?.chart?.result?.[0]?.meta;
-                            if (meta?.regularMarketPrice) return parseFloat(meta.regularMarketPrice);
+                            const url = `https://query1.finance.yahoo.com/v8/finance/chart/${targetSymbol}?interval=1m&range=1d`;
+                            const res = await fetch(url, {
+                                headers: {
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                                },
+                            });
+
+                            if (res.ok) {
+                                const d = await res.json();
+                                const result = d?.chart?.result?.[0];
+                                const meta = result?.meta;
+
+                                let validPrice: number | null = null;
+                                // 1. Try Standard Price
+                                if (meta?.regularMarketPrice !== undefined && meta?.regularMarketPrice !== null) {
+                                    validPrice = parseFloat(meta.regularMarketPrice);
+                                }
+
+                                // 2. BSE Specific Fallback Logic
+                                // BSE data is often delayed or has null regularMarketPrice
+                                if (targetSymbol.endsWith('.BO') && (validPrice === null || isNaN(validPrice))) {
+                                    console.log(`BSE Fallback triggered for ${targetSymbol}`);
+
+                                    // Fallback A: Last Traded Price from Intraday Chart
+                                    const quotes = result?.indicators?.quote?.[0];
+                                    if (quotes?.close && Array.isArray(quotes.close)) {
+                                        // Find last non-null close price
+                                        for (let i = quotes.close.length - 1; i >= 0; i--) {
+                                            if (quotes.close[i] !== null && quotes.close[i] !== undefined) {
+                                                validPrice = parseFloat(quotes.close[i]);
+                                                console.log(`Recovered price from chart history for ${targetSymbol}: ${validPrice}`);
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    // Fallback B: Previous Close (Last Resort)
+                                    if ((validPrice === null || isNaN(validPrice)) && meta?.chartPreviousClose) {
+                                        validPrice = parseFloat(meta.chartPreviousClose);
+                                        console.log(`Using previous close for ${targetSymbol}: ${validPrice}`);
+                                    }
+                                }
+
+                                if (validPrice !== null && !isNaN(validPrice)) {
+                                    return validPrice;
+                                }
+                            }
+                        } catch (e) {
+                            console.error(`Price fetch attempt ${attempt + 1} failed for ${targetSymbol}`, e);
                         }
-                    } catch (e) { console.error("Yahoo error", e); }
+                        attempt++;
+                    }
                     return null;
                 };
 
-                // Fetch Final Price
-                const final_price = await getPrice();
+                // Fetch Final Price with Retries
+                const final_price = await getPrice(symbol);
 
+                // Validation Layer: Critical Null Check
                 if (final_price === null || isNaN(final_price)) {
-                    console.log(`Final price unavailable for ${symbol}`);
+                    console.log(`Final price unavailable for ${symbol} after retries.`);
+
+                    // Safe Failure Handling
                     if (isOverdue) {
                         console.log(`Marking ${pred.id} as Data Unavailable (Price fetch failed, overdue)`);
-                        await supabase.from('predictions').update({
+                        const { error: updateError } = await supabase.from('predictions').update({
                             outcome: 'Data Unavailable',
                             evaluation_time: now.toISOString()
                         }).eq('id', pred.id);
+
+                        if (updateError) console.error(`Failed to update ${pred.id} status`, updateError);
                     }
+
+                    // ABORT: Never proceed to update outcome if price is null
                     continue;
                 }
 
