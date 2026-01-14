@@ -311,7 +311,7 @@ export const VerifiedReportPDF = ({ data }: { data: VerifiedReportData }) => {
                             Verivo
                         </Text>
                     </View>
-                    <Text style={styles.tagline}>Trust the data, not the hype.</Text>
+                    <Text style={styles.tagline}>Insights Are Verified.</Text>
                 </View>
 
                 <View style={styles.container}>

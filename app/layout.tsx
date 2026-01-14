@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Verivo - Prediction Credibility Platform",
-  description: "Verified Expert Predictions Platform. Trust the data, not the hype.",
+  description: "Verified Expert Predictions Platform. Insights Are Verified.",
 }
 
 export default function RootLayout({

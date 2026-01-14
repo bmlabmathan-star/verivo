@@ -59,7 +59,7 @@ export function Navbar() {
               Verivo
             </span>
             <span className="text-[10px] text-gray-400 font-medium tracking-wide uppercase mt-0.5">
-              Trust the data, not the hype.
+              Insights Are Verified.
             </span>
           </div>
         </Link>
