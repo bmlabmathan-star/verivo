@@ -8,7 +8,7 @@ export function Footer() {
           <div className="md:col-span-1">
             <h3 className="text-xl font-bold text-purple-600 mb-2">Verivo</h3>
             <p className="text-sm text-gray-600 mb-1">Verified Expert Predictions Platform</p>
-            <p className="text-xs italic text-gray-500">Insights Are Verified.</p>
+            <p className="text-xs italic text-gray-500">Where Insights Are Verified.</p>
           </div>
 
           <div>

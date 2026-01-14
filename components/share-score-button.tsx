@@ -24,7 +24,7 @@ Credible Accuracy: ${stats.accuracy}
 Predictions Evaluated: ${stats.totalPredictions}
 Confidence Factor: ${stats.confidenceFactor}
 
-Insights Are Verified.`
+Where Insights Are Verified.`
 
     const fullShareText = `${title}\n\n${body}`
 

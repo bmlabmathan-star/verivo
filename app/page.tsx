@@ -13,7 +13,7 @@ export default function Home() {
         </h1>
         <div className="relative inline-block">
           <p className="text-2xl md:text-4xl font-bold text-white mb-4 drop-shadow-md">
-            <span className="gradient-text">Insights Are Verified</span>
+            <span className="gradient-text">Where Insights Are Verified</span>
           </p>
           <div className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent"></div>
         </div>
