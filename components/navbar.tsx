@@ -54,7 +54,7 @@ export function Navbar() {
       <div className="container flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
           <Image
-            src="/branding/verivo-logo-light.svg"
+            src="/branding/verivo-logo-light.png"
             alt="Verivo Logo"
             width={140}
             height={40}
