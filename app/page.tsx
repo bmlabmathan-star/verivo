@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { StartContributingButton } from "@/components/start-contributing-button"
@@ -8,9 +9,15 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center min-h-screen px-4 py-20 hero-bg">
       {/* Hero Section */}
       <div className="text-center max-w-4xl mx-auto mb-16 space-y-8">
-        <h1 className="text-6xl md:text-8xl font-black text-white mb-6 drop-shadow-2xl tracking-tighter animate-in fade-in slide-in-from-top-10 duration-1000">
-          VERIVO
-        </h1>
+        <div className="relative w-full max-w-[500px] h-[120px] mx-auto mb-6 animate-in fade-in slide-in-from-top-10 duration-1000">
+          <Image
+            src="/branding/verivo-logo-light.png"
+            alt="VERIVO"
+            fill
+            className="object-contain drop-shadow-2xl"
+            priority
+          />
+        </div>
         <div className="relative inline-block">
           <p className="text-2xl md:text-4xl font-bold text-white mb-4 drop-shadow-md">
             <span className="gradient-text">Where Insights Are Verified</span>

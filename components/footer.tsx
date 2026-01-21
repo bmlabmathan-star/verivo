@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 
 export function Footer() {
   return (
@@ -6,7 +7,15 @@ export function Footer() {
       <div className="container py-10 md:py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-5">
           <div className="md:col-span-1">
-            <h3 className="text-xl font-bold text-purple-600 mb-2">Verivo</h3>
+            <Link href="/" className="inline-block mb-4">
+              <Image
+                src="/branding/verivo-logo-light.png"
+                alt="Verivo"
+                width={120}
+                height={35}
+                className="h-9 w-auto object-contain"
+              />
+            </Link>
             <p className="text-sm text-gray-600 mb-1">Verified Expert Predictions Platform</p>
             <p className="text-xs italic text-gray-500">Where Insights Are Verified.</p>
           </div>

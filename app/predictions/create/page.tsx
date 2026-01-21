@@ -341,7 +341,7 @@ export default function CreatePredictionPage() {
                                     <div
                                         key={type.id}
                                         onClick={() => {
-                                            const newType = type.id as "stock" | "global"
+                                            const newType = type.id as "stock" | "global" | "index"
                                             setMarketType(newType)
                                             setCountry("")
                                             setExchange("")
@@ -411,7 +411,7 @@ export default function CreatePredictionPage() {
                                     <Label className="text-gray-200 text-base">Select Country</Label>
                                     <Select
                                         value={country}
-                                        onValueChange={(val) => {
+                                        onValueChange={(val: string) => {
                                             setCountry(val)
                                             setExchange("")
                                         }}
@@ -451,7 +451,7 @@ export default function CreatePredictionPage() {
                                             <Label className="text-gray-200 text-base">Asset Type</Label>
                                             <Select
                                                 value={stockAssetType}
-                                                onValueChange={(val) => setStockAssetType(val as "Stock" | "Index")}
+                                                onValueChange={(val: string) => setStockAssetType(val as "Stock" | "Index")}
                                             >
                                                 <SelectTrigger className="bg-white/5 border-white/10 text-white">
                                                     <SelectValue placeholder="Select Type" />
@@ -502,7 +502,7 @@ export default function CreatePredictionPage() {
                                     <Label className="text-gray-200 text-base">Select Index</Label>
                                     <Select
                                         value={globalIdentifier}
-                                        onValueChange={(val) => setGlobalIdentifier(val)}
+                                        onValueChange={(val: string) => setGlobalIdentifier(val)}
                                     >
                                         <SelectTrigger className="bg-white/5 border-white/10 text-white">
                                             <SelectValue placeholder="Select Market Index" />
@@ -524,7 +524,7 @@ export default function CreatePredictionPage() {
                                     <Label className="text-gray-200 text-base">Select Global Asset Category</Label>
                                     <Select
                                         value={globalAsset}
-                                        onValueChange={(val) => {
+                                        onValueChange={(val: string) => {
                                             setGlobalAsset(val)
                                             setGlobalIdentifier("")
                                             // Auto-Mode Logic

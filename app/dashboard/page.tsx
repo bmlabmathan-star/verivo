@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
 import { getCurrentExpert } from "@/lib/actions/experts"
 import { getPredictions } from "@/lib/actions/predictions"
@@ -91,7 +92,14 @@ export default async function DashboardPage() {
     <div className="container py-8">
       <div className="flex justify-between items-center mb-8 dashboard-header-bg p-8 rounded-2xl border border-white/10 relative overflow-hidden shadow-2xl">
         <div className="relative z-10">
-          <h1 className="text-4xl font-bold text-white mb-2">Expert Dashboard</h1>
+          <Image
+            src="/branding/verivo-logo-light.png"
+            alt="Verivo Dashboard"
+            width={180}
+            height={48}
+            className="h-12 w-auto object-contain mb-2"
+            priority
+          />
           <p className="text-white/60">Manage your predictive portfolio.</p>
         </div>
         <div className="relative z-10">
@@ -281,8 +289,8 @@ export default async function DashboardPage() {
               <p className="mt-4 text-xs text-gray-500 italic border-t border-white/10 pt-3">
                 "User B is rewarded 10x more because sustaining accuracy over hours is significantly harder than minutes."
               </p>
-            </div> // This closing div matches the div that started at line 208 for the "Example" block
-          </div> // This closes the grid-cols-2 div started at line 165
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -298,7 +306,7 @@ export default async function DashboardPage() {
             </p>
           ) : (
             <div className="space-y-4">
-              {predictions.map((prediction) => {
+              {predictions.map((prediction: any) => {
                 return (
                   <div key={prediction.id} className="space-y-2">
                     <PredictionCard

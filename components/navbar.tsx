@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabaseClient"
 import { useEffect, useState } from "react"
 import { User } from "@supabase/supabase-js"
-import { VerivoLogo, VerivoIcon } from "@/components/verivo-logo"
+import Image from "next/image"
 
 export function Navbar() {
   const pathname = usePathname()
@@ -53,15 +53,14 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-950/80 backdrop-blur supports-[backdrop-filter]:bg-slate-950/60">
       <div className="container flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-          <VerivoIcon className="w-8 h-8" color="#7C3AED" />
-          <div className="flex flex-col">
-            <span className="font-bold text-xl tracking-tight text-white leading-none">
-              Verivo
-            </span>
-            <span className="text-[10px] text-gray-400 font-medium tracking-wide uppercase mt-0.5">
-              Where Insights Are Verified.
-            </span>
-          </div>
+          <Image
+            src="/branding/verivo-logo-light.png"
+            alt="Verivo Logo"
+            width={140}
+            height={40}
+            className="h-10 w-auto object-contain"
+            priority
+          />
         </Link>
 
         <div className="flex items-center gap-6">
