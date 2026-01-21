@@ -9,9 +9,9 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center min-h-screen px-4 py-20 hero-bg">
       {/* Hero Section */}
       <div className="text-center max-w-4xl mx-auto mb-16 space-y-8">
-        <div className="relative w-full max-w-[800px] h-[250px] mx-auto mb-8 animate-in fade-in slide-in-from-top-10 duration-1000">
+        <div className="relative w-full max-w-[800px] h-[300px] mx-auto mb-8 animate-in fade-in slide-in-from-top-10 duration-1000">
           <Image
-            src="/branding/verivo-logo-light.png"
+            src="/branding/verivo-logo-light.svg"
             alt="VERIVO"
             fill
             className="object-contain drop-shadow-2xl"

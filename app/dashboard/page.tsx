@@ -93,11 +93,11 @@ export default async function DashboardPage() {
       <div className="flex justify-between items-center mb-8 dashboard-header-bg p-8 rounded-2xl border border-white/10 relative overflow-hidden shadow-2xl">
         <div className="relative z-10">
           <Image
-            src="/branding/verivo-logo-light.png"
+            src="/branding/verivo-logo-light.svg"
             alt="Verivo Dashboard"
-            width={320}
-            height={96}
-            className="h-28 w-auto object-contain mb-4"
+            width={360}
+            height={108}
+            className="h-32 w-auto object-contain mb-4"
             priority
           />
           <p className="text-white/60">Manage your predictive portfolio.</p>

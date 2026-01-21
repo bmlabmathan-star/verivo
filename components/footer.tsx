@@ -9,11 +9,11 @@ export function Footer() {
           <div className="md:col-span-1">
             <Link href="/" className="inline-block mb-4">
               <Image
-                src="/branding/verivo-logo-light.png"
+                src="/branding/verivo-logo-light.svg"
                 alt="Verivo"
-                width={180}
-                height={55}
-                className="h-16 w-auto object-contain"
+                width={200}
+                height={60}
+                className="h-20 w-auto object-contain"
               />
             </Link>
             <p className="text-sm text-gray-600 mb-1">Verified Expert Predictions Platform</p>
