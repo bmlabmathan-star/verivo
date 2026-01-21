@@ -95,9 +95,9 @@ export default async function DashboardPage() {
           <Image
             src="/branding/verivo-logo-light.png"
             alt="Verivo Dashboard"
-            width={240}
-            height={64}
-            className="h-16 w-auto object-contain mb-2"
+            width={320}
+            height={96}
+            className="h-28 w-auto object-contain mb-4"
             priority
           />
           <p className="text-white/60">Manage your predictive portfolio.</p>

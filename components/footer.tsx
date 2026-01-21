@@ -11,9 +11,9 @@ export function Footer() {
               <Image
                 src="/branding/verivo-logo-light.png"
                 alt="Verivo"
-                width={150}
-                height={45}
-                className="h-12 w-auto object-contain"
+                width={180}
+                height={55}
+                className="h-16 w-auto object-contain"
               />
             </Link>
             <p className="text-sm text-gray-600 mb-1">Verified Expert Predictions Platform</p>

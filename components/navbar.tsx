@@ -51,14 +51,14 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-950/80 backdrop-blur supports-[backdrop-filter]:bg-slate-950/60">
-      <div className="container flex h-16 items-center justify-between px-4">
+      <div className="container flex h-24 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
           <Image
             src="/branding/verivo-logo-light.png"
             alt="Verivo Logo"
-            width={180}
-            height={52}
-            className="h-14 w-auto object-contain"
+            width={240}
+            height={80}
+            className="h-20 w-auto object-contain"
             priority
           />
         </Link>
