@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 40" fill="none">
+  <!-- Shield Icon Group -->
+  <g transform="translate(0, 0)">
+    <!-- Shield Background -->
+    <path
+      d="M20 38C20 38 4 28 4 14V8L20 2L36 8V14C36 28 20 38 20 38Z"
+      stroke="#7C3AED"
+      stroke-width="3"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+    <!-- Checkmark -->
+    <path
+      d="M13 18L18 23L27 13"
+      stroke="#7C3AED"
+      stroke-width="3"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </g>
+
+  <!-- Verivo Text -->
+  <text x="50" y="28" fill="white" font-family="Arial, sans-serif" font-weight="bold" font-size="28" letter-spacing="1">VERIVO</text>
+</svg>

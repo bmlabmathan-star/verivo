@@ -93,7 +93,7 @@ export default async function DashboardPage() {
       <div className="flex justify-between items-center mb-8 dashboard-header-bg p-8 rounded-2xl border border-white/10 relative overflow-hidden shadow-2xl">
         <div className="relative z-10">
           <Image
-            src="/branding/verivo-logo-light.png"
+            src="/branding/verivo-logo-light.svg"
             alt="Verivo Dashboard"
             width={180}
             height={48}
