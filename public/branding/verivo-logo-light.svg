@@ -1,25 +1,62 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 40" fill="none">
-  <!-- Shield Icon Group -->
-  <g transform="translate(0, 0)">
-    <!-- Shield Background -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" fill="none">
+  <defs>
+    <linearGradient id="shieldGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00E5FF" /> <!-- Cyan/Teal -->
+      <stop offset="100%" stop-color="#2979FF" /> <!-- Bright Blue -->
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Group for Icon (Left aligned) -->
+  <g transform="translate(10, 10)">
+    <!-- Shield Shape -->
+    <!-- Path approximates the slightly curved top and pointed bottom -->
     <path
-      d="M20 38C20 38 4 28 4 14V8L20 2L36 8V14C36 28 20 38 20 38Z"
-      stroke="#7C3AED"
-      stroke-width="3"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      fill="none"
+      d="M10 15 
+         C 10 15, 40 5, 70 15 
+         C 70 15, 70 50, 40 85 
+         C 10 50, 10 15, 10 15 Z"
+      fill="url(#shieldGradient)"
     />
-    <!-- Checkmark -->
+    
+    <!-- Checkmark (White, thick, extending slightly) -->
+    <!-- Coordinates tuned to sit firmly in the shield but 'pop' -->
     <path
-      d="M13 18L18 23L27 13"
-      stroke="#7C3AED"
-      stroke-width="3"
-      stroke-linecap="round"
-      stroke-linejoin="round"
+      d="M 28 42 
+         L 42 56 
+         L 72 20 
+         L 65 15 
+         L 42 42 
+         L 35 35 Z" 
+      fill="white"
+      stroke="none"
     />
   </g>
 
-  <!-- Verivo Text -->
-  <text x="50" y="28" fill="white" font-family="Arial, sans-serif" font-weight="bold" font-size="28" letter-spacing="1">VERIVO</text>
+  <!-- Text Group -->
+  <g transform="translate(90, 0)">
+    <!-- VERIVO Main Text -->
+    <text x="0" y="55" 
+          fill="white" 
+          font-family="'Inter', 'Roboto', 'Helvetica', sans-serif" 
+          font-weight="800" 
+          font-size="52" 
+          letter-spacing="2">
+      VERIVO
+    </text>
+    
+    <!-- Tagline -->
+    <text x="2" y="80" 
+          fill="#94A3B8" 
+          font-family="'Inter', 'Roboto', 'Helvetica', sans-serif" 
+          font-weight="500" 
+          font-size="14" 
+          letter-spacing="2.5"
+          text-transform="uppercase">
+      Where Insights Are Verified
+    </text>
+  </g>
 </svg>
