@@ -9,7 +9,7 @@ export function Footer() {
           <div className="md:col-span-1">
             <Link href="/" className="inline-block mb-4">
               <Image
-                src="/branding/verivo-logo-light.svg"
+                src="/branding/verivo-logo-light.png"
                 alt="Verivo"
                 width={200}
                 height={60}
