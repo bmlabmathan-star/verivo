@@ -17,6 +17,11 @@ export interface Database {
           name: string
           bio: string | null
           created_at: string
+          gender?: string | null
+          nationality?: string | null
+          country_code?: string | null
+          mobile_number?: string | null
+          mobile_verified?: boolean | null
         }
         Insert: {
           id?: string
@@ -25,6 +30,11 @@ export interface Database {
           name: string
           bio?: string | null
           created_at?: string
+          gender?: string | null
+          nationality?: string | null
+          country_code?: string | null
+          mobile_number?: string | null
+          mobile_verified?: boolean | null
         }
         Update: {
           id?: string
@@ -33,6 +43,11 @@ export interface Database {
           name?: string
           bio?: string | null
           created_at?: string
+          gender?: string | null
+          nationality?: string | null
+          country_code?: string | null
+          mobile_number?: string | null
+          mobile_verified?: boolean | null
         }
       }
       predictions: {
