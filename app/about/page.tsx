@@ -28,7 +28,7 @@ export default function AboutPage() {
                         </p>
                         <div className="flex items-center gap-2 text-white/60">
                             <Globe className="h-5 w-5" />
-                            <span>Headquartered in Scotland</span>
+                            <span>Headquartered in Scotland, United Kingdom</span>
                         </div>
                     </div>
                 </div>
