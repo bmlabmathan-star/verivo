@@ -8,7 +8,7 @@ import { AutoLogout } from "@/components/auto-logout"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Verivo - Prediction Credibility Platform",
+  title: "Verivo - Insight Credibility Platform",
   description: "Verified Expert Predictions Platform. Where Insights Are Verified.",
   icons: {
     icon: "/branding/verivo-logo-light.png",
