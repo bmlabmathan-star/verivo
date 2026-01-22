@@ -16,8 +16,7 @@ export function Footer() {
                 className="h-20 w-auto object-contain"
               />
             </Link>
-            <p className="text-sm text-gray-600 mb-1">Verified Expert Predictions Platform</p>
-            <p className="text-xs italic text-gray-500">Where Insights Are Verified.</p>
+
           </div>
 
           <div>
