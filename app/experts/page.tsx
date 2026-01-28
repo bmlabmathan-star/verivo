@@ -73,7 +73,7 @@ export default async function ExpertsPage() {
             const rawScore = stats.verivo_score || 0
             const scoreDisplay = rawScore > 0 ? rawScore.toFixed(2) : "New"
             const scoreLabel = rawScore > 0 ? "Verivo Score" : "Status"
-            const totalForecasts = stats.total_predictions || 0
+            const totalForecasts = expert.computed_prediction_count || stats.total_predictions || 0
 
             const name = expert.username || "Contributor"
             const initials = name.slice(0, 1).toUpperCase()

@@ -9,10 +9,24 @@ export async function getExperts() {
   try {
     const supabase = await createClient()
 
+    // Correct Query Logic per Requirements:
+    // 1. Fetch from 'experts' (profiles equivalent)
+    // 2. INNER JOIN 'predictions' via 'expert_id' to 'id' (filtered via !inner)
+    // 3. Count predictions
+    // 4. Return only if count > 0
+    // 5. Order by count DESC
+
+    // We rely on expert_stats if reliable or just fallback to the join count.
+
+    // Using explicit selection with !inner to enforce existence of predictions
+    // Note: 'predictions!inner(count)' fetches the count of matched predictions.
+    // However, Supabase (PostgREST) returns one row per expert.
+
     const { data, error } = await supabase
       .from("experts")
       .select(`
         *,
+        predictions!inner(count),
         expert_stats (
           total_predictions,
           correct_predictions,
@@ -20,8 +34,6 @@ export async function getExperts() {
           verivo_score
         )
       `)
-      // Order by score descending, but keep nulls/zeros at the end
-      .order("verivo_score", { foreignTable: "expert_stats", ascending: false })
 
     if (error) {
       console.error("Database error in getExperts:", error.message)
@@ -30,16 +42,26 @@ export async function getExperts() {
 
     if (!data) return []
 
-    // Filter: Include if (total_predictions > 0) OR (username is in FEATURED_USERNAMES)
-    const filtered = data.filter((expert: any) => {
-      const stats = expert.expert_stats?.[0]
-      const hasForecasts = stats && stats.total_predictions > 0
-      const isFeatured = expert.username && FEATURED_USERNAMES.includes(expert.username)
+    // Process data to standard format
+    const expertList = data.map((expert: any) => {
+      // PostgREST return for count usually comes as [{ count: N }] array
+      let count = 0
+      if (Array.isArray(expert.predictions) && expert.predictions[0]) {
+        count = expert.predictions[0].count
+      } else if (expert.expert_stats && expert.expert_stats[0]) {
+        count = expert.expert_stats[0].total_predictions
+      }
 
-      return hasForecasts || isFeatured
+      return {
+        ...expert,
+        computed_prediction_count: count
+      }
     })
 
-    return filtered
+    // Sort descending by count
+    expertList.sort((a, b) => b.computed_prediction_count - a.computed_prediction_count)
+
+    return expertList
   } catch (err) {
     console.error("Unexpected error in getExperts:", err)
     return []

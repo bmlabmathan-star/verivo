@@ -105,6 +105,7 @@ export async function getFollowingList() {
         name,
         username,
         expert_stats (
+          total_predictions,
           verivo_score
         )
       )
@@ -123,6 +124,7 @@ export async function getFollowingList() {
         name: item.experts?.name || "Unknown Expert",
         username: item.experts?.username || "",
         verivoScore: item.experts?.expert_stats?.[0]?.verivo_score || null,
+        totalPredictions: item.experts?.expert_stats?.[0]?.total_predictions || 0,
         followedAt: item.created_at
     }))
 }

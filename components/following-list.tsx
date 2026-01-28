@@ -56,11 +56,10 @@ export async function FollowingList() {
                                 <div className="flex items-center gap-4">
                                     {/* Score */}
                                     <div className="text-right hidden sm:block">
-                                        <div className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Score</div>
+                                        <div className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Forecasts</div>
                                         <div className="text-sm font-bold text-white font-mono">
-                                            {typeof expert.verivoScore === 'number'
-                                                ? expert.verivoScore.toFixed(2)
-                                                : 'N/A'}
+                                            {/* @ts-ignore - added property recently */}
+                                            {expert.totalPredictions || 0}
                                         </div>
                                     </div>
 
