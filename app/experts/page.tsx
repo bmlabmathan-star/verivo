@@ -1,5 +1,6 @@
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { getExperts } from "@/lib/actions/experts"
 import { getFollowedUserIds } from "@/lib/actions/follow"
 import { FollowButton } from "@/components/follow-button"
@@ -53,15 +54,27 @@ export default async function ExpertsPage() {
       </div>
 
       {experts.length === 0 ? (
-        <div className="text-center py-20 bg-white/5 rounded-3xl border border-dashed border-white/10">
-          <p className="text-gray-400">No active contributors found. Be the first!</p>
+        <div className="text-center py-20 bg-white/5 rounded-3xl border border-dashed border-white/10 px-6">
+          <div className="text-4xl mb-4">🌱</div>
+          <h3 className="text-xl font-bold text-white mb-2">Discovery Begins Here</h3>
+          <p className="text-gray-400 max-w-lg mx-auto mb-6">
+            Expertise on Verivo is earned, not given. Be the first to start building a verified track record, or invite others to contribute.
+          </p>
+          <Link href="/predictions/create">
+            <Button className="bg-purple-600 hover:bg-purple-500 text-white">
+              Start Contributing
+            </Button>
+          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {experts.map((expert: any) => {
             const stats = expert.expert_stats?.[0] || {}
-            const accuracy = stats.accuracy_rate ? (stats.accuracy_rate * 100).toFixed(0) + "%" : "N/A"
-            const score = stats.verivo_score ? stats.verivo_score.toFixed(2) : "0.00"
+            const rawScore = stats.verivo_score || 0
+            const scoreDisplay = rawScore > 0 ? rawScore.toFixed(2) : "New"
+            const scoreLabel = rawScore > 0 ? "Verivo Score" : "Status"
+            const totalForecasts = stats.total_predictions || 0
+
             const name = expert.username || "Contributor"
             const initials = name.slice(0, 1).toUpperCase()
             const color = getAvatarColor(name)
@@ -81,7 +94,9 @@ export default async function ExpertsPage() {
                           {name}
                         </h3>
                       </Link>
-                      <div className="text-[10px] text-white/40 uppercase font-black tracking-widest mt-1">Status: Active</div>
+                      <div className="text-[10px] text-white/40 uppercase font-black tracking-widest mt-1">
+                        {totalForecasts > 0 ? "Active Contributor" : "New Member"}
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
@@ -89,12 +104,14 @@ export default async function ExpertsPage() {
                   <div className="space-y-4 pt-4 border-t border-white/10">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <div className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">Verivo Score</div>
-                        <div className="text-lg font-bold text-white/90">{score}</div>
+                        <div className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">{scoreLabel}</div>
+                        <div className={`text-lg font-bold ${rawScore > 0 ? "text-white/90" : "text-purple-300"}`}>
+                          {scoreDisplay}
+                        </div>
                       </div>
                       <div>
-                        <div className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">Accuracy</div>
-                        <div className="text-lg font-bold text-white/90">{accuracy}</div>
+                        <div className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">Forecasts</div>
+                        <div className="text-lg font-bold text-white/90">{totalForecasts}</div>
                       </div>
                     </div>
 

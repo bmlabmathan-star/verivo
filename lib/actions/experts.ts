@@ -2,6 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server"
 
+// Hardcoded list of manually featured users (e.g. core team or early VIPs) using usernames
+const FEATURED_USERNAMES = ["verivo_official", "admin", "market_wizard"]
+
 export async function getExperts() {
   try {
     const supabase = await createClient()
@@ -17,6 +20,7 @@ export async function getExperts() {
           verivo_score
         )
       `)
+      // Order by score descending, but keep nulls/zeros at the end
       .order("verivo_score", { foreignTable: "expert_stats", ascending: false })
 
     if (error) {
@@ -24,7 +28,18 @@ export async function getExperts() {
       return []
     }
 
-    return data || []
+    if (!data) return []
+
+    // Filter: Include if (total_predictions > 0) OR (username is in FEATURED_USERNAMES)
+    const filtered = data.filter((expert: any) => {
+      const stats = expert.expert_stats?.[0]
+      const hasForecasts = stats && stats.total_predictions > 0
+      const isFeatured = expert.username && FEATURED_USERNAMES.includes(expert.username)
+
+      return hasForecasts || isFeatured
+    })
+
+    return filtered
   } catch (err) {
     console.error("Unexpected error in getExperts:", err)
     return []
