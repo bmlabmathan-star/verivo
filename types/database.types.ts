@@ -142,6 +142,26 @@ export interface Database {
           prediction_type?: string | null
         }
       }
+      follows: {
+        Row: {
+          id: string
+          follower_id: string
+          expert_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          follower_id: string
+          expert_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          follower_id?: string
+          expert_id?: string
+          created_at?: string
+        }
+      }
       validations: {
         Row: {
           id: string

@@ -5,6 +5,8 @@ import { getPredictions } from "@/lib/actions/predictions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { PredictionCard } from "@/components/prediction-card"
+import { FollowButton } from "@/components/follow-button"
+import { getFollowStatus, getFollowerCount } from "@/lib/actions/follow"
 import { ShieldCheck, Target, Activity, Clock, PieChart as PieIcon, ArrowLeft, BarChart2, Info } from "lucide-react"
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -61,10 +63,12 @@ export default async function ExpertProfilePage({
   const resolvedParams = await params
   const { id } = resolvedParams
 
-  const [profile, performance, predictions] = await Promise.all([
+  const [profile, performance, predictions, isFollowing, followerCount] = await Promise.all([
     getExpertProfile(id),
     getExpertPerformance(id),
-    getPredictions({ userId: id, revealed: true })
+    getPredictions({ userId: id, revealed: true }),
+    getFollowStatus(id),
+    getFollowerCount(id)
   ])
 
   if (!profile || !profile.stats) {
@@ -99,16 +103,21 @@ export default async function ExpertProfilePage({
                 Verified
               </span>
             </div>
-            <p className="text-gray-300 text-sm max-w-md font-medium text-shadow-sm">
-              Credibility protocol member since 2024. Establishing trust through verified predictive performance.
+            <p className="text-gray-300 text-sm max-w-md font-medium text-shadow-sm flex items-center gap-3">
+              <span>Member since 2024</span>
+              <span className="w-1 h-1 bg-gray-500 rounded-full"></span>
+              <span className="text-white font-bold">{followerCount} Followers</span>
             </p>
           </div>
         </div>
 
-        <div className="text-right mt-6 md:mt-0 relative z-10">
-          <div className="text-[10px] text-purple-200 uppercase font-black tracking-widest mb-1 opacity-80">Verivo Credibility Score</div>
-          <div className="text-6xl font-black text-white tracking-tighter drop-shadow-xl flex items-center gap-2 justify-end">
-            {stats.verivo_score.toFixed(2)}
+        <div className="flex flex-col items-end gap-4 relative z-10 mt-6 md:mt-0">
+          <FollowButton expertId={id} initialIsFollowing={isFollowing} />
+          <div className="text-right">
+            <div className="text-[10px] text-purple-200 uppercase font-black tracking-widest mb-1 opacity-80">Verivo Credibility Score</div>
+            <div className="text-6xl font-black text-white tracking-tighter drop-shadow-xl flex items-center gap-2 justify-end">
+              {stats.verivo_score.toFixed(2)}
+            </div>
           </div>
         </div>
       </div>

@@ -9,6 +9,7 @@ import Link from "next/link"
 import { PredictionCard } from "@/components/prediction-card"
 import { ShareScoreButton } from "@/components/share-score-button"
 import { DownloadReportButton } from "@/components/download-report-button"
+import { FollowingList } from "@/components/following-list"
 
 type VerivoScore = {
   user_id: string
@@ -153,6 +154,11 @@ export default async function DashboardPage() {
             </div>
           </CardHeader>
         </Card>
+      </div>
+
+      {/* Following */}
+      <div className="mb-8">
+        <FollowingList />
       </div>
 
       {/* Performance Detail Card */}
