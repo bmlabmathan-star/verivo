@@ -126,3 +126,22 @@ export async function getFollowingList() {
         followedAt: item.created_at
     }))
 }
+
+export async function getFollowedUserIds() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return []
+
+    const { data, error } = await supabase
+        .from("follows")
+        .select("following_id")
+        .eq("follower_id", user.id)
+
+    if (error) {
+        console.error("Error fetching followed IDs:", error)
+        return []
+    }
+
+    return data.map(item => item.following_id)
+}

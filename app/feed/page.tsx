@@ -1,5 +1,7 @@
 import Link from "next/link"
 import { getVerifiedFeed, getTopPerformers } from "@/lib/actions/feed"
+import { getFollowedUserIds } from "@/lib/actions/follow"
+import { FollowButton } from "@/components/follow-button"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -20,6 +22,7 @@ export default async function FeedPage({
 
   const feedItems = await getVerifiedFeed({ filter, sort })
   const topPerformers = await getTopPerformers()
+  const followedIds = await getFollowedUserIds()
 
   const formatUser = (id: string) => `User #${id.slice(0, 4)}`
 
@@ -212,7 +215,16 @@ export default async function FeedPage({
                     <div className="md:border-l border-white/10 md:pl-6 flex flex-col justify-center min-w-[140px]">
                       <div className="mb-2">
                         <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1">Writer</p>
-                        <p className="text-sm text-white font-medium">{formatUser(item.user_id)}</p>
+                        <div className="flex flex-col gap-2">
+                          <p className="text-sm text-white font-medium">{formatUser(item.user_id)}</p>
+                          <div className="scale-90 origin-left">
+                            <FollowButton
+                              expertId={item.user_id}
+                              initialIsFollowing={followedIds.includes(item.user_id)}
+                              isOwnProfile={user?.id === item.user_id}
+                            />
+                          </div>
+                        </div>
                       </div>
                       <div>
                         <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1">Score Impact</p>

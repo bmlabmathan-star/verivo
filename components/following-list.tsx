@@ -26,7 +26,7 @@ export async function FollowingList() {
                             <p className="text-sm font-medium text-white/60">You are not following any experts yet.</p>
                             <p className="text-xs text-gray-500 mt-1">Discover verified experts to track their performance.</p>
                         </div>
-                        <Link href="/feed">
+                        <Link href="/experts">
                             <Button variant="outline" className="border-purple-500/30 text-purple-300 hover:bg-purple-500/10">
                                 Discover Experts
                             </Button>
