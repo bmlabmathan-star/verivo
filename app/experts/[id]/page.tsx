@@ -8,6 +8,7 @@ import { PredictionCard } from "@/components/prediction-card"
 import { FollowButton } from "@/components/follow-button"
 import { getFollowStatus, getFollowerCount } from "@/lib/actions/follow"
 import { ShieldCheck, Target, Activity, Clock, PieChart as PieIcon, ArrowLeft, BarChart2, Info } from "lucide-react"
+import { createClient } from "@/lib/supabase/server"
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params
@@ -62,6 +63,8 @@ export default async function ExpertProfilePage({
 }) {
   const resolvedParams = await params
   const { id } = resolvedParams
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
   const [profile, performance, predictions, isFollowing, followerCount] = await Promise.all([
     getExpertProfile(id),
@@ -112,7 +115,7 @@ export default async function ExpertProfilePage({
         </div>
 
         <div className="flex flex-col items-end gap-4 relative z-10 mt-6 md:mt-0">
-          <FollowButton expertId={id} initialIsFollowing={isFollowing} />
+          <FollowButton expertId={id} initialIsFollowing={isFollowing} isOwnProfile={profile.id === user?.id} />
           <div className="text-right">
             <div className="text-[10px] text-purple-200 uppercase font-black tracking-widest mb-1 opacity-80">Verivo Credibility Score</div>
             <div className="text-6xl font-black text-white tracking-tighter drop-shadow-xl flex items-center gap-2 justify-end">

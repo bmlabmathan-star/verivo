@@ -1,11 +1,12 @@
 -- Create follows table for Follow/Following feature
+-- Note: User specified this table already exists. This is for reference or fresh setups.
 create table if not exists public.follows (
   id uuid not null default gen_random_uuid(),
   follower_id uuid not null references auth.users(id) on delete cascade,
-  expert_id uuid not null references public.experts(id) on delete cascade,
+  following_id uuid not null references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
   primary key (id),
-  unique (follower_id, expert_id)
+  unique (follower_id, following_id)
 );
 
 -- Enable RLS
@@ -23,5 +24,3 @@ create policy "Users can follow experts"
 create policy "Users can unfollow experts"
   on public.follows for delete
   using (auth.uid() = follower_id);
-
--- Instructions: Run this in Supabase SQL Editor to enable the feature.

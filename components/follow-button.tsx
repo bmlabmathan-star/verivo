@@ -9,14 +9,16 @@ import { useRouter } from "next/navigation"
 interface FollowButtonProps {
     expertId: string
     initialIsFollowing: boolean
+    isOwnProfile?: boolean
 }
 
-export function FollowButton({ expertId, initialIsFollowing }: FollowButtonProps) {
+export function FollowButton({ expertId, initialIsFollowing, isOwnProfile = false }: FollowButtonProps) {
     const [isFollowing, setIsFollowing] = useState(initialIsFollowing)
     const [isPending, startTransition] = useTransition()
     const router = useRouter()
 
     const handleToggle = async () => {
+        if (isOwnProfile) return
         // Optimistic update
         const previousState = isFollowing
         setIsFollowing(!previousState)

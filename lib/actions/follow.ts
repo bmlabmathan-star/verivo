@@ -16,12 +16,13 @@ export async function toggleFollow(expertId: string) {
         throw new Error("Cannot follow yourself")
     }
 
+    // Note: Database uses 'following_id' but we typically refer to it as 'expertId' in function args
     // Check if already following
     const { data: existingFollow } = await supabase
         .from("follows")
         .select("id")
         .eq("follower_id", user.id)
-        .eq("expert_id", expertId)
+        .eq("following_id", expertId)
         .single()
 
     if (existingFollow) {
@@ -41,7 +42,7 @@ export async function toggleFollow(expertId: string) {
             .from("follows")
             .insert({
                 follower_id: user.id,
-                expert_id: expertId
+                following_id: expertId
             })
 
         if (error) {
@@ -65,7 +66,7 @@ export async function getFollowStatus(expertId: string) {
         .from("follows")
         .select("id")
         .eq("follower_id", user.id)
-        .eq("expert_id", expertId)
+        .eq("following_id", expertId)
         .single()
 
     return !!data
@@ -77,7 +78,7 @@ export async function getFollowerCount(expertId: string) {
     const { count, error } = await supabase
         .from("follows")
         .select("*", { count: "exact", head: true })
-        .eq("expert_id", expertId)
+        .eq("following_id", expertId)
 
     if (error) {
         console.error("Error getting follower count:", error)
@@ -93,12 +94,13 @@ export async function getFollowingList() {
 
     if (!user) return []
 
+    // Map 'experts' table to the 'following_id' relationship
     const { data, error } = await supabase
         .from("follows")
         .select(`
-      expert_id,
+      following_id,
       created_at,
-      experts:expert_id (
+      experts:following_id (
         id,
         name,
         username,
@@ -117,7 +119,7 @@ export async function getFollowingList() {
 
     // Transform data to a cleaner format
     return data.map((item: any) => ({
-        expertId: item.expert_id,
+        expertId: item.following_id,
         name: item.experts?.name || "Unknown Expert",
         username: item.experts?.username || "",
         verivoScore: item.experts?.expert_stats?.[0]?.verivo_score || null,
