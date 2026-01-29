@@ -36,22 +36,20 @@ export default function ExpertsPage() {
         const { data: { user } } = await supabase.auth.getUser()
         setCurrentUserId(user?.id || null)
 
-        // Fetch experts with predictions (Left Join to populate all, then filter)
-        // Using 'experts' table (maps to profiles in this app)
+        // STRICT REQUIREMENT: Fetch from 'profiles' with predictions count
+        // Note: This relies on 'profiles' table existing and 'predictions' having a FK to it.
         const { data: expertsData, error: expertsError } = await supabase
-          .from("experts")
+          .from("profiles")
           .select(`
             id,
             username,
-            name,
-            predictions (
-              id
-            ),
-            expert_stats (
-              total_predictions,
-              verivo_score
-            )
+            full_name,
+            avatar_url,
+            predictions(count)
           `)
+        // Attempting to filter by count if supported, otherwise handled in client
+        // .gt("predictions.count", 0) // Note: This syntax typically requires a View or specific PostgREST setup. 
+        // We will count and filter client side as requested in the text "Sort experts client-side"
 
         if (expertsError) {
           console.error("Error fetching experts:", expertsError)
@@ -60,17 +58,25 @@ export default function ExpertsPage() {
         // Process experts
         const expertList = (expertsData || [])
           .map((expert: any) => {
-            // Count predictions from the array (Left Join returns array of objects)
-            const count = expert.predictions?.length || 0
+            // predictions(count) returns an array with an object { count: number } or similar
+            // typically [{ count: 5 }]
+            let count = 0
+            if (expert.predictions) {
+              if (Array.isArray(expert.predictions)) {
+                count = expert.predictions[0]?.count || 0
+              } else {
+                // unexpected format
+                count = 0
+              }
+            }
 
             return {
               ...expert,
+              name: expert.full_name || expert.username, // Map full_name to name for UI compatibility
               computed_prediction_count: count
             }
           })
-          // Filter: Expert = user with >= 1 prediction
           .filter((e: any) => e.computed_prediction_count > 0)
-          // Sort by prediction count DESC
           .sort((a: any, b: any) => b.computed_prediction_count - a.computed_prediction_count)
 
         setExperts(expertList)
@@ -140,13 +146,13 @@ export default function ExpertsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {experts.map((expert: any) => {
-            const stats = expert.expert_stats?.[0] || {}
-            const rawScore = stats.verivo_score || 0
-            const scoreDisplay = rawScore > 0 ? rawScore.toFixed(2) : "New"
-            const scoreLabel = rawScore > 0 ? "Verivo Score" : "Status"
-            const totalForecasts = expert.computed_prediction_count || stats.total_predictions || 0
+            // stats logic might be missing from query, using computed count
+            const rawScore = 0 // Stats not in SELECT query
+            const scoreDisplay = expert.computed_prediction_count > 0 ? "Active" : "New"
+            const scoreLabel = "Status"
+            const totalForecasts = expert.computed_prediction_count
 
-            const name = expert.username || expert.name || "Contributor"
+            const name = expert.name || "Contributor"
             const initials = name.slice(0, 1).toUpperCase()
             const color = getAvatarColor(name)
 
