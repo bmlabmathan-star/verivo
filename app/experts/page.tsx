@@ -36,15 +36,17 @@ export default function ExpertsPage() {
         const { data: { user } } = await supabase.auth.getUser()
         setCurrentUserId(user?.id || null)
 
-        // Fetch experts with joined predictions count
-        // Strict definition: Expert = user with >= 1 prediction
+        // Fetch experts with predictions (Left Join to populate all, then filter)
+        // Using 'experts' table per codebase convention.
         const { data: expertsData, error: expertsError } = await supabase
           .from("experts")
           .select(`
             id,
             username,
             name,
-            predictions!inner(count),
+            predictions (
+              id
+            ),
             expert_stats (
               total_predictions,
               verivo_score
@@ -57,18 +59,15 @@ export default function ExpertsPage() {
 
         // Process experts
         const expertList = (expertsData || []).map((expert: any) => {
-          let count = 0
-          // Handle Supabase count return format (array of objects)
-          if (Array.isArray(expert.predictions) && expert.predictions[0]) {
-            count = expert.predictions[0].count
-          }
+          // Count predictions from the array (Left Join returns array of objects)
+          const count = expert.predictions?.length || 0
 
           return {
             ...expert,
             computed_prediction_count: count
           }
         })
-          // Double check filter for > 0 (though inner join should enforce >= 1, count could be 0 if logic differs)
+          // Filter: Expert = user with >= 1 prediction
           .filter((e: any) => e.computed_prediction_count > 0)
           // Sort by prediction count DESC
           .sort((a: any, b: any) => b.computed_prediction_count - a.computed_prediction_count)
