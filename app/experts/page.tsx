@@ -37,9 +37,9 @@ export default function ExpertsPage() {
         setCurrentUserId(user?.id || null)
 
         // Fetch experts with predictions (Left Join to populate all, then filter)
-        // Using 'experts' table per codebase convention.
+        // User requested strict query on 'profiles' table.
         const { data: expertsData, error: expertsError } = await supabase
-          .from("experts")
+          .from("profiles")
           .select(`
             id,
             username,
