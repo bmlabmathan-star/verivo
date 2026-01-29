@@ -44,6 +44,7 @@ export default function ExpertsPage() {
             id,
             username,
             name,
+            avatar_url,
             predictions (
               id
             ),
@@ -58,15 +59,16 @@ export default function ExpertsPage() {
         }
 
         // Process experts
-        const expertList = (expertsData || []).map((expert: any) => {
-          // Count predictions from the array (Left Join returns array of objects)
-          const count = expert.predictions?.length || 0
+        const expertList = (expertsData || [])
+          .map((expert: any) => {
+            // Count predictions from the array (Left Join returns array of objects)
+            const count = expert.predictions?.length || 0
 
-          return {
-            ...expert,
-            computed_prediction_count: count
-          }
-        })
+            return {
+              ...expert,
+              computed_prediction_count: count
+            }
+          })
           // Filter: Expert = user with >= 1 prediction
           .filter((e: any) => e.computed_prediction_count > 0)
           // Sort by prediction count DESC
@@ -154,9 +156,17 @@ export default function ExpertsPage() {
                 <CardHeader>
                   <div className="flex items-center gap-6">
                     <Link href={`/experts/${expert.id}`}>
-                      <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${color} text-white flex items-center justify-center text-3xl font-black shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                        {initials}
-                      </div>
+                      {expert.avatar_url ? (
+                        <img
+                          src={expert.avatar_url}
+                          alt={name}
+                          className="w-20 h-20 rounded-2xl object-cover shadow-lg group-hover:scale-110 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${color} text-white flex items-center justify-center text-3xl font-black shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                          {initials}
+                        </div>
+                      )}
                     </Link>
                     <div className="min-w-0 flex-1">
                       <Link href={`/experts/${expert.id}`}>
