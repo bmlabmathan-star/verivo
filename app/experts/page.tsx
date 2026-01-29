@@ -1,10 +1,10 @@
+"use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { getExperts } from "@/lib/actions/experts"
-import { getFollowedUserIds } from "@/lib/actions/follow"
 import { FollowButton } from "@/components/follow-button"
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 
 // Helper to generate a consistent color based on string
@@ -23,15 +23,86 @@ const getAvatarColor = (str: string) => {
   return colors[Math.abs(hash) % colors.length]
 }
 
-export default async function ExpertsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export default function ExpertsPage() {
+  const [experts, setExperts] = useState<any[]>([])
+  const [followedIds, setFollowedIds] = useState<string[]>([])
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const experts = await getExperts()
-  const followedIds = await getFollowedUserIds()
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        setCurrentUserId(user?.id || null)
 
-  // Filter out the current user from the list if desired, or keep them to show your own card
-  // Usually lists show everyone.
+        // Fetch experts with joined predictions count
+        // Strict definition: Expert = user with >= 1 prediction
+        const { data: expertsData, error: expertsError } = await supabase
+          .from("experts")
+          .select(`
+            id,
+            username,
+            name,
+            predictions!inner(count),
+            expert_stats (
+              total_predictions,
+              verivo_score
+            )
+          `)
+
+        if (expertsError) {
+          console.error("Error fetching experts:", expertsError)
+        }
+
+        // Process experts
+        const expertList = (expertsData || []).map((expert: any) => {
+          let count = 0
+          // Handle Supabase count return format (array of objects)
+          if (Array.isArray(expert.predictions) && expert.predictions[0]) {
+            count = expert.predictions[0].count
+          }
+
+          return {
+            ...expert,
+            computed_prediction_count: count
+          }
+        })
+          // Double check filter for > 0 (though inner join should enforce >= 1, count could be 0 if logic differs)
+          .filter((e: any) => e.computed_prediction_count > 0)
+          // Sort by prediction count DESC
+          .sort((a: any, b: any) => b.computed_prediction_count - a.computed_prediction_count)
+
+        setExperts(expertList)
+
+        // Fetch followed IDs only if user is logged in
+        if (user) {
+          const { data: followData, error: followError } = await supabase
+            .from("follows")
+            .select("following_id")
+            .eq("follower_id", user.id)
+
+          if (!followError && followData) {
+            setFollowedIds(followData.map((f: any) => f.following_id))
+          }
+        }
+      } catch (error) {
+        console.error("Unexpected error in ExpertsPage:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="container py-12 max-w-6xl text-center text-white">
+        <div className="animate-pulse">Loading contributors...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="container py-12 max-w-6xl">
@@ -75,7 +146,7 @@ export default async function ExpertsPage() {
             const scoreLabel = rawScore > 0 ? "Verivo Score" : "Status"
             const totalForecasts = expert.computed_prediction_count || stats.total_predictions || 0
 
-            const name = expert.username || "Contributor"
+            const name = expert.username || expert.name || "Contributor"
             const initials = name.slice(0, 1).toUpperCase()
             const color = getAvatarColor(name)
 
@@ -119,7 +190,7 @@ export default async function ExpertsPage() {
                       <FollowButton
                         expertId={expert.id}
                         initialIsFollowing={followedIds.includes(expert.id)}
-                        isOwnProfile={user?.id === expert.id}
+                        isOwnProfile={currentUserId === expert.id}
                       />
                     </div>
                   </div>
