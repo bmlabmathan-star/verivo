@@ -33,67 +33,56 @@ export default function ExpertsPage() {
     const fetchData = async () => {
       try {
         const supabase = createClient()
+
+        // 1. Get current user (for Follow state)
         const { data: { user } } = await supabase.auth.getUser()
         setCurrentUserId(user?.id || null)
 
-        // STRICT REQUIREMENT: Fetch from 'profiles' with predictions count
-        // Note: This relies on 'profiles' table existing and 'predictions' having a FK to it.
-        const { data: expertsData, error: expertsError } = await supabase
+        // 2. Query Profiles + Predictions strictly
+        //    Using !inner to perform INNER JOIN functionality (filter out profiles with 0 predictions)
+        const { data, error } = await supabase
           .from("profiles")
           .select(`
             id,
             username,
-            full_name,
             avatar_url,
-            predictions(count)
+            predictions!inner (
+              id
+            )
           `)
-        // Attempting to filter by count if supported, otherwise handled in client
-        // .gt("predictions.count", 0) // Note: This syntax typically requires a View or specific PostgREST setup. 
-        // We will count and filter client side as requested in the text "Sort experts client-side"
 
-        if (expertsError) {
-          console.error("Error fetching experts:", expertsError)
+        if (error) {
+          console.error("Error fetching experts:", error)
+        } else {
+          // Log raw response strictly as requested
+          console.log("Raw Supabase response (Experts):", data)
         }
 
-        // Process experts
-        const expertList = (expertsData || [])
-          .map((expert: any) => {
-            // predictions(count) returns an array with an object { count: number } or similar
-            // typically [{ count: 5 }]
-            let count = 0
-            if (expert.predictions) {
-              if (Array.isArray(expert.predictions)) {
-                count = expert.predictions[0]?.count || 0
-              } else {
-                // unexpected format
-                count = 0
-              }
-            }
+        // 3. Process Data: Count predictions and sort descending
+        const processedExperts = (data || [])
+          .map((profile: any) => ({
+            ...profile,
+            prediction_count: profile.predictions?.length || 0
+          }))
+          .filter((e: any) => e.prediction_count > 0) // Double check strict filtering
+          .sort((a: any, b: any) => b.prediction_count - a.prediction_count)
 
-            return {
-              ...expert,
-              name: expert.full_name || expert.username, // Map full_name to name for UI compatibility
-              computed_prediction_count: count
-            }
-          })
-          .filter((e: any) => e.computed_prediction_count > 0)
-          .sort((a: any, b: any) => b.computed_prediction_count - a.computed_prediction_count)
+        setExperts(processedExperts)
 
-        setExperts(expertList)
-
-        // Fetch followed IDs only if user is logged in
+        // 4. Fetch Followed IDs if logged in
         if (user) {
-          const { data: followData, error: followError } = await supabase
+          const { data: followData } = await supabase
             .from("follows")
             .select("following_id")
             .eq("follower_id", user.id)
 
-          if (!followError && followData) {
+          if (followData) {
             setFollowedIds(followData.map((f: any) => f.following_id))
           }
         }
-      } catch (error) {
-        console.error("Unexpected error in ExpertsPage:", error)
+
+      } catch (err) {
+        console.error("Unexpected error in ExpertsPage:", err)
       } finally {
         setLoading(false)
       }
@@ -145,16 +134,11 @@ export default function ExpertsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {experts.map((expert: any) => {
-            // stats logic might be missing from query, using computed count
-            const rawScore = 0 // Stats not in SELECT query
-            const scoreDisplay = expert.computed_prediction_count > 0 ? "Active" : "New"
-            const scoreLabel = "Status"
-            const totalForecasts = expert.computed_prediction_count
-
-            const name = expert.name || "Contributor"
+          {experts.map((expert) => {
+            const name = expert.username || "Contributor"
             const initials = name.slice(0, 1).toUpperCase()
             const color = getAvatarColor(name)
+            const isOwnProfile = currentUserId === expert.id
 
             return (
               <Card key={expert.id} className="glass-card card-hover h-full border-white/10 overflow-hidden relative group">
@@ -180,7 +164,7 @@ export default function ExpertsPage() {
                         </h3>
                       </Link>
                       <div className="text-[10px] text-white/40 uppercase font-black tracking-widest mt-1">
-                        {totalForecasts > 0 ? "Active Contributor" : "New Member"}
+                        Active Contributor
                       </div>
                     </div>
                   </div>
@@ -189,14 +173,14 @@ export default function ExpertsPage() {
                   <div className="space-y-4 pt-4 border-t border-white/10">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <div className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">{scoreLabel}</div>
-                        <div className={`text-lg font-bold ${rawScore > 0 ? "text-white/90" : "text-purple-300"}`}>
-                          {scoreDisplay}
+                        <div className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">Status</div>
+                        <div className="text-lg font-bold text-white/90">
+                          Active
                         </div>
                       </div>
                       <div>
                         <div className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">Forecasts</div>
-                        <div className="text-lg font-bold text-white/90">{totalForecasts}</div>
+                        <div className="text-lg font-bold text-white/90">{expert.prediction_count}</div>
                       </div>
                     </div>
 
@@ -204,7 +188,7 @@ export default function ExpertsPage() {
                       <FollowButton
                         expertId={expert.id}
                         initialIsFollowing={followedIds.includes(expert.id)}
-                        isOwnProfile={currentUserId === expert.id}
+                        isOwnProfile={isOwnProfile}
                       />
                     </div>
                   </div>
