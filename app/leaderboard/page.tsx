@@ -45,7 +45,7 @@ export default async function LeaderboardPage() {
       rank: i + 1,
       score,
       status: getStatus(score),
-      displayName: e.username || `User #${e.id.slice(0, 4)}`,
+      displayName: e.registration_id ? `Contributor #${e.registration_id}` : "Contributor",
       initials: (e.username?.[0] || "#").toUpperCase()
     }
   }).sort((a: any, b: any) => b.score - a.score) // Ensure sorted by score if query didn't

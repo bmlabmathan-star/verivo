@@ -12,9 +12,12 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params
+  const profile = await getExpertProfile(resolvedParams.id)
+  const displayId = profile?.contributor_id || "Contributor"
+
   return {
-    title: `Verivo Profile | User #${resolvedParams.id.slice(0, 4)}`,
-    description: `Verified performance metrics and credibility score for User ${resolvedParams.id.slice(0, 4)}.`,
+    title: `Verivo Profile | ${displayId}`,
+    description: `Verified performance metrics and credibility score for ${displayId}.`,
   }
 }
 
@@ -79,7 +82,8 @@ export default async function ExpertProfilePage({
   }
 
   const { stats } = profile
-  const displayName = `Contributor #${id.slice(0, 4)}`
+  // Use the newly generated streamlined ID, or fallback
+  const displayName = profile.contributor_id || "Contributor"
 
   return (
     <div className="container py-12 max-w-5xl">
@@ -103,34 +107,44 @@ export default async function ExpertProfilePage({
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-black text-white tracking-tight drop-shadow-md">{displayName}</h1>
             </div>
-            <p className="text-gray-300 text-sm max-w-md font-medium text-shadow-sm flex items-center gap-3">
-              <span>Member since 2024</span>
-              <span className="w-1 h-1 bg-gray-500 rounded-full"></span>
-              <span className="text-white font-bold">{followerCount} Followers</span>
-            </p>
+            <div className="flex items-center gap-4 text-sm text-gray-300">
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3 text-purple-400" /> Member since {profile.created_at ? new Date(profile.created_at).getFullYear() : '2024'}
+              </span>
+              <span className="w-1 h-1 bg-gray-600 rounded-full" />
+              <span className="flex items-center gap-1 font-medium text-white">
+                {followerCount} Followers
+              </span>
+            </div>
+            <div className="mt-4">
+              <FollowButton
+                expertId={id}
+                initialIsFollowing={isFollowing}
+                isOwnProfile={user?.id === id}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-4 relative z-10 mt-6 md:mt-0">
-          <FollowButton expertId={id} initialIsFollowing={isFollowing} isOwnProfile={profile.id === user?.id} />
-          <div className="text-right">
-            <div className="text-[10px] text-purple-200 uppercase font-black tracking-widest mb-1 opacity-80">Verivo Credibility Score</div>
-            <div className="text-6xl font-black text-white tracking-tighter drop-shadow-xl flex items-center gap-2 justify-end">
-              {stats.verivo_score.toFixed(2)}
-            </div>
+        <div className="relative z-10 text-right mt-8 md:mt-0">
+          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Verivo Credibility Score</div>
+          <div className="text-6xl font-black text-white tracking-tighter drop-shadow-xl gradient-text">
+            {stats.verivo_score.toFixed(2)}
           </div>
         </div>
       </div>
 
       {/* 2. Key Metrics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
         <Card className="bg-white/5 border-white/10">
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-2">
-              <Target className="w-4 h-4 text-purple-400" />
+              <Target className="w-4 h-4 text-cyan-400" />
               <span className="text-xs text-gray-400 font-bold uppercase">Accuracy</span>
             </div>
-            <div className="text-2xl font-bold text-white">{(stats.accuracy_rate * 100).toFixed(1)}%</div>
+            <div className="text-2xl font-bold text-white">
+              {(stats.accuracy_rate * 100).toFixed(1)}%
+            </div>
           </CardContent>
         </Card>
         <Card className="bg-white/5 border-white/10">
@@ -145,7 +159,7 @@ export default async function ExpertProfilePage({
         <Card className="bg-white/5 border-white/10">
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-2">
-              <BarChart2 className="w-4 h-4 text-green-400" />
+              <BarChart2 className="w-4 h-4 text-emerald-400" />
               <span className="text-xs text-gray-400 font-bold uppercase">Correct</span>
             </div>
             <div className="text-2xl font-bold text-white">{stats.correct_predictions}</div>

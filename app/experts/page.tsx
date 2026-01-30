@@ -47,7 +47,7 @@ export default function ExpertsPage() {
         // Fetch profiles first to guarantee they appear.
         const { data: profiles, error: profileError } = await supabase
           .from("profiles")
-          .select("id, username, avatar_url")
+          .select("id, username, avatar_url, registration_id")
 
         if (profileError) {
           console.error("Supabase error (profiles):", profileError)
@@ -80,6 +80,7 @@ export default function ExpertsPage() {
           id: p.id,
           username: p.username,
           avatar_url: p.avatar_url,
+          registration_id: p.registration_id,
           prediction_count: counts[p.id] || 0
         }))
 
@@ -164,7 +165,7 @@ export default function ExpertsPage() {
         // Experts List
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {experts.map((expert) => {
-            const name = expert.username || "Contributor"
+            const name = expert.registration_id ? `Contributor #${expert.registration_id}` : "Contributor"
             const initials = name.slice(0, 1).toUpperCase()
             const color = getAvatarColor(name)
             const isOwnProfile = currentUserId === expert.id

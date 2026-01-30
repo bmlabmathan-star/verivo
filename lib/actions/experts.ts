@@ -21,11 +21,11 @@ export async function getExperts() {
     // We also fetch expert_stats to display the score if it exists.
 
     const { data, error } = await supabase
-      .from("experts")
+      .from("profiles")
       .select(`
         id,
         username,
-        name,
+        registration_id,
         predictions!inner(count),
         expert_stats (
           total_predictions,
@@ -72,9 +72,10 @@ export async function getExpertById(expertId: string) {
     const supabase = await createClient()
 
     const { data, error } = await supabase
-      .from("experts")
+      .from("profiles")
       .select(`
         *,
+        registration_id,
         expert_stats (
           total_predictions,
           correct_predictions,

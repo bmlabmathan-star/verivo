@@ -33,7 +33,7 @@ export default async function FeedPage({
 
   const contributorIds = await getBatchContributorIds(allUserIds)
 
-  const formatUser = (id: string) => contributorIds[id] || `User #${id.slice(0, 4)}`
+  const formatUser = (id: string) => contributorIds[id] || "Contributor"
 
   // ... (date formatting remains same)
   const formatDate = (dateStr: string) => {
