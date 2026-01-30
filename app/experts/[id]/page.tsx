@@ -12,12 +12,9 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params
-  const profile = await getExpertProfile(resolvedParams.id)
-  const displayId = profile?.contributor_id || `#${resolvedParams.id.slice(0, 4)}`
-
   return {
-    title: `Verivo Profile | ${displayId}`,
-    description: `Verified performance metrics and credibility score for ${displayId}.`,
+    title: `Verivo Profile | User #${resolvedParams.id.slice(0, 4)}`,
+    description: `Verified performance metrics and credibility score for User ${resolvedParams.id.slice(0, 4)}.`,
   }
 }
 
@@ -82,9 +79,7 @@ export default async function ExpertProfilePage({
   }
 
   const { stats } = profile
-  // Use the newly generated streamlined ID, or fallback
-  const displayName = profile.contributor_id || `Contributor #${id.slice(0, 4)}`
-  const memberYear = profile.created_at ? new Date(profile.created_at).getFullYear() : '2024'
+  const displayName = `Contributor #${id.slice(0, 4)}`
 
   return (
     <div className="container py-12 max-w-5xl">
@@ -107,12 +102,9 @@ export default async function ExpertProfilePage({
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-black text-white tracking-tight drop-shadow-md">{displayName}</h1>
-              <span className="bg-green-500/20 text-green-300 border border-green-500/30 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider backdrop-blur-sm">
-                Verified
-              </span>
             </div>
             <p className="text-gray-300 text-sm max-w-md font-medium text-shadow-sm flex items-center gap-3">
-              <span>Member since {memberYear}</span>
+              <span>Member since 2024</span>
               <span className="w-1 h-1 bg-gray-500 rounded-full"></span>
               <span className="text-white font-bold">{followerCount} Followers</span>
             </p>

@@ -13,8 +13,6 @@ function getWeight(minutes: number): number {
 
 export interface ExpertProfileData {
     id: string
-    created_at?: string
-    contributor_id?: string
     // Add other profile fields if 'verivo_users' table has them
     stats: {
         total_predictions: number
@@ -27,46 +25,6 @@ export interface ExpertProfileData {
 export async function getExpertProfile(expertId: string): Promise<ExpertProfileData | null> {
     const supabase = await createClient()
 
-    // 1. Fetch Profile Data (created_at)
-    // We need this to generate the Streamlined ID
-    const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("created_at")
-        .eq("id", expertId)
-        .single()
-
-    if (profileError) {
-        console.error("Error fetching expert profile:", profileError)
-        // Proceed with fallback date if needed, or fail depending on strictness
-    }
-
-    // 2. Generate Streamlined ID: DDMMYYnnnn
-    let contributor_id = `Contributor #${expertId.slice(0, 4)}` // Fallback
-
-    if (profile?.created_at) {
-        const date = new Date(profile.created_at)
-        const dd = String(date.getDate()).padStart(2, '0')
-        const mm = String(date.getMonth() + 1).padStart(2, '0')
-        const yy = String(date.getFullYear()).slice(-2)
-
-        // Define day boundaries for counting
-        const startOfDay = new Date(date)
-        startOfDay.setHours(0, 0, 0, 0)
-
-        // Count users who registered TODAY but BEFORE this user
-        const { count, error: countError } = await supabase
-            .from("profiles")
-            .select("*", { count: 'exact', head: true })
-            .gte('created_at', startOfDay.toISOString())
-            .lt('created_at', profile.created_at)
-
-        if (!countError) {
-            const sequence = String((count || 0) + 1).padStart(4, '0')
-            contributor_id = `${dd}${mm}${yy}${sequence}`
-        }
-    }
-
-    // 3. Fetch Stats
     // Try to fetch from 'user_verivo_scores' view which aggregates stats
     const { data: stats, error } = await supabase
         .from("user_verivo_scores")
@@ -79,8 +37,6 @@ export async function getExpertProfile(expertId: string): Promise<ExpertProfileD
         if (error.code === 'PGRST116') { // No rows found
             return {
                 id: expertId,
-                created_at: profile?.created_at,
-                contributor_id,
                 stats: {
                     total_predictions: 0,
                     correct_predictions: 0,
@@ -95,8 +51,6 @@ export async function getExpertProfile(expertId: string): Promise<ExpertProfileD
 
     return {
         id: expertId,
-        created_at: profile?.created_at,
-        contributor_id,
         stats: stats ? {
             total_predictions: stats.total_predictions,
             correct_predictions: stats.correct_predictions,

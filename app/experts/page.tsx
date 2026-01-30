@@ -59,11 +59,9 @@ export default function ExpertsPage() {
         // If this fails due to RLS, it won't crash the profiles list.
         let counts: Record<string, number> = {}
         try {
-          // Increase limit to prevent capping at default (e.g. 100)
           const { data: predictions } = await supabase
             .from("predictions")
             .select("user_id")
-            .range(0, 9999)
 
           if (predictions) {
             predictions.forEach((p: any) => {
