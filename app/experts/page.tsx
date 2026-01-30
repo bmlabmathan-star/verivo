@@ -31,49 +31,58 @@ export default function ExpertsPage() {
 
   useEffect(() => {
     const fetchExperts = async () => {
-      try {
-        setLoading(true)
+      setLoading(true)
 
-        // 1. Get current user (optional)
+      try {
+        console.log("Fetching experts...")
+
+        // 1. Current user
         const {
           data: { user },
         } = await supabase.auth.getUser()
         setCurrentUserId(user?.id ?? null)
 
-        // 2. Fetch experts using RPC-style aggregation
+        // 2. Fetch all experts (Relaxed for visibility)
+        // Trying 'experts' table as 'profiles' might be restricted or empty
+        // Selecting minimal fields to ensure no column errors. UI handles missing avatar.
         const { data, error } = await supabase
-          .from("profiles")
-          .select(`
+          .from("experts")
+          .select(
+            `
           id,
           username,
-          avatar_url,
-          predictions(count)
-        `)
+          predictions(id)
+        `
+          )
 
         if (error) {
-          console.error("Supabase error:", error)
+          console.error("Supabase error (experts):", error)
+          setExperts([])
           return
         }
 
-        // 3. Normalize + compute prediction_count
-        const expertsWithCount =
+        console.log("Raw data:", data)
+
+        // 3. Normalize + count predictions
+        const expertsFormatted =
           data?.map((p: any) => ({
             id: p.id,
             username: p.username,
             avatar_url: p.avatar_url,
-            prediction_count: p.predictions?.[0]?.count ?? 0,
+            prediction_count: p.predictions?.length ?? 0,
           })) ?? []
 
-        // 4. Strict filter (matches SQL HAVING clause)
-        const filtered = expertsWithCount
-          .filter((e) => e.prediction_count > 0)
+        console.log("Formatted experts:", expertsFormatted)
+
+        // 4. Sort by prediction count descending
+        const finalExperts = expertsFormatted
           .sort((a, b) => b.prediction_count - a.prediction_count)
 
-        console.log("FINAL EXPERTS:", filtered)
+        console.log("Final experts:", finalExperts)
 
-        setExperts(filtered)
+        setExperts(finalExperts)
 
-        // 5. Fetch follows (only if logged in)
+        // 5. Fetch follows
         if (user) {
           const { data: followData } = await supabase
             .from("follows")
@@ -81,7 +90,7 @@ export default function ExpertsPage() {
             .eq("follower_id", user.id)
 
           if (followData) {
-            setFollowedIds(followData.map((f: any) => f.following_id))
+            setFollowedIds(followData.map((f) => f.following_id))
           }
         }
       } catch (err) {
@@ -93,6 +102,7 @@ export default function ExpertsPage() {
 
     fetchExperts()
   }, [])
+
 
 
 
@@ -175,7 +185,7 @@ export default function ExpertsPage() {
                         </h3>
                       </Link>
                       <div className="text-[10px] text-white/40 uppercase font-black tracking-widest mt-1">
-                        Active Contributor
+                        {expert.prediction_count > 0 ? "Active Contributor" : "New Member"}
                       </div>
                     </div>
                   </div>
@@ -186,7 +196,7 @@ export default function ExpertsPage() {
                       <div>
                         <div className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">Status</div>
                         <div className="text-lg font-bold text-white/90">
-                          Active
+                          {expert.prediction_count > 0 ? "Active" : "Joined"}
                         </div>
                       </div>
                       <div>
