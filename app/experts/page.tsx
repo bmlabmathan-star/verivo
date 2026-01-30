@@ -1,13 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
+import { supabase } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { FollowButton } from "@/components/follow-button"
-import { createClient } from "@/lib/supabase/client"
-import Link from "next/link"
 
-// Helper to generate a consistent color based on string
+// Helper for avatar colors
 const getAvatarColor = (str: string) => {
   const colors = [
     "from-purple-500 to-pink-600",
@@ -25,51 +25,50 @@ const getAvatarColor = (str: string) => {
 
 export default function ExpertsPage() {
   const [experts, setExperts] = useState<any[]>([])
-  const [followedIds, setFollowedIds] = useState<string[]>([])
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [followedIds, setFollowedIds] = useState<string[]>([])
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const supabase = createClient()
+        console.log("Fetching experts...")
 
-        // 1. Get current user (for Follow state)
+        // 1. Get current user
         const { data: { user } } = await supabase.auth.getUser()
         setCurrentUserId(user?.id || null)
 
-        // 2. Query Profiles + Predictions strictly
-        //    Using !inner to perform INNER JOIN functionality (filter out profiles with 0 predictions)
+        // 2. Fetch Profiles with Predictions strict inner join
         const { data, error } = await supabase
           .from("profiles")
           .select(`
             id,
             username,
             avatar_url,
-            predictions!inner (
-              id
-            )
+            predictions!inner(id)
           `)
 
         if (error) {
           console.error("Error fetching experts:", error)
         } else {
-          // Log raw response strictly as requested
-          console.log("Raw Supabase response (Experts):", data)
+          console.log("Raw Supabase response:", data)
         }
 
-        // 3. Process Data: Count predictions and sort descending
-        const processedExperts = (data || [])
-          .map((profile: any) => ({
-            ...profile,
-            prediction_count: profile.predictions?.length || 0
+        // 3. Process Data
+        const expertsList = (data || [])
+          .map((expert: any) => ({
+            ...expert,
+            prediction_count: expert.predictions?.length || 0,
+            // Fallback for name if needed, though strictly we used username
+            name: expert.username || "Contributor"
           }))
-          .filter((e: any) => e.prediction_count > 0) // Double check strict filtering
+          .filter((e: any) => e.prediction_count > 0)
           .sort((a: any, b: any) => b.prediction_count - a.prediction_count)
 
-        setExperts(processedExperts)
+        console.log("Processed experts list:", expertsList)
+        setExperts(expertsList)
 
-        // 4. Fetch Followed IDs if logged in
+        // 4. Fetch Follows if user exists
         if (user) {
           const { data: followData } = await supabase
             .from("follows")
@@ -82,19 +81,24 @@ export default function ExpertsPage() {
         }
 
       } catch (err) {
-        console.error("Unexpected error in ExpertsPage:", err)
+        console.error("Unexpected error in fetchData:", err)
       } finally {
         setLoading(false)
+        console.log("Loading set to false")
       }
     }
 
     fetchData()
   }, [])
 
+  // Loading State
   if (loading) {
     return (
       <div className="container py-12 max-w-6xl text-center text-white">
-        <div className="animate-pulse">Loading contributors...</div>
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="h-8 w-64 bg-white/10 rounded mb-4"></div>
+          <div className="h-4 w-96 bg-white/10 rounded"></div>
+        </div>
       </div>
     )
   }
@@ -120,6 +124,7 @@ export default function ExpertsPage() {
       </div>
 
       {experts.length === 0 ? (
+        // Empty State - Only shown when not loading and 0 experts
         <div className="text-center py-20 bg-white/5 rounded-3xl border border-dashed border-white/10 px-6">
           <div className="text-4xl mb-4">🌱</div>
           <h3 className="text-xl font-bold text-white mb-2">Discovery Begins Here</h3>
@@ -133,6 +138,7 @@ export default function ExpertsPage() {
           </Link>
         </div>
       ) : (
+        // Experts List
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {experts.map((expert) => {
             const name = expert.username || "Contributor"
