@@ -43,45 +43,53 @@ export default function ExpertsPage() {
         setCurrentUserId(user?.id ?? null)
 
         // 2. Fetch all experts (Relaxed for visibility)
-        // Re-enabling predictions fetch (LEFT JOIN by default) to get accurate counts
-        const { data, error } = await supabase
+        // 2. Fetch all experts (Robust Separate Fetch Strategy)
+        // Fetch profiles first to guarantee they appear.
+        const { data: profiles, error: profileError } = await supabase
           .from("profiles")
-          .select(
-            `
-          id,
-          username,
-          avatar_url,
-          predictions(id)
-        `
-          )
+          .select("id, username, avatar_url")
 
-        if (error) {
-          console.error("Supabase error (profiles):", error)
+        if (profileError) {
+          console.error("Supabase error (profiles):", profileError)
           setExperts([])
           return
         }
 
-        console.log("Raw data:", data)
+        // 3. Fetch prediction counts safely
+        // If this fails due to RLS, it won't crash the profiles list.
+        let counts: Record<string, number> = {}
+        try {
+          const { data: predictions } = await supabase
+            .from("predictions")
+            .select("user_id")
 
-        // 3. Normalize + count predictions
-        const expertsFormatted =
-          data?.map((p: any) => ({
-            id: p.id,
-            username: p.username,
-            avatar_url: p.avatar_url,
-            prediction_count: p.predictions?.length ?? 0,
-          })) ?? []
+          if (predictions) {
+            predictions.forEach((p: any) => {
+              // Assume user_id is the foreign key.
+              if (p.user_id) {
+                counts[p.user_id] = (counts[p.user_id] || 0) + 1
+              }
+            })
+          }
+        } catch (err) {
+          console.warn("Could not fetch predictions count:", err)
+        }
 
-        console.log("Formatted experts:", expertsFormatted)
+        // 4. Map back to experts
+        const expertsFormatted = profiles.map((p: any) => ({
+          id: p.id,
+          username: p.username,
+          avatar_url: p.avatar_url,
+          prediction_count: counts[p.id] || 0
+        }))
 
-        // 4. Sort by prediction count descending
-        const finalExperts = expertsFormatted
-          .sort((a, b) => b.prediction_count - a.prediction_count)
-
-        console.log("Final experts:", finalExperts)
+        // Sort descending
+        const finalExperts = expertsFormatted.sort(
+          (a, b) => b.prediction_count - a.prediction_count
+        )
 
         setExperts(finalExperts)
-
+        // Skip previous logic steps 3 & 4
         // 5. Fetch follows
         if (user) {
           const { data: followData } = await supabase
@@ -90,7 +98,7 @@ export default function ExpertsPage() {
             .eq("follower_id", user.id)
 
           if (followData) {
-            setFollowedIds(followData.map((f) => f.following_id))
+            setFollowedIds(followData.map((f: any) => f.following_id))
           }
         }
       } catch (err) {
