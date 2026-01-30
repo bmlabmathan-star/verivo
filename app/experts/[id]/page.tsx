@@ -12,9 +12,12 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params
+  const profile = await getExpertProfile(resolvedParams.id)
+  const displayId = profile?.contributor_id || `#${resolvedParams.id.slice(0, 4)}`
+
   return {
-    title: `Verivo Profile | User #${resolvedParams.id.slice(0, 4)}`,
-    description: `Verified performance metrics and credibility score for User ${resolvedParams.id.slice(0, 4)}.`,
+    title: `Verivo Profile | ${displayId}`,
+    description: `Verified performance metrics and credibility score for ${displayId}.`,
   }
 }
 
@@ -79,7 +82,9 @@ export default async function ExpertProfilePage({
   }
 
   const { stats } = profile
-  const displayName = `Contributor #${id.slice(0, 4)}`
+  // Use the newly generated streamlined ID, or fallback
+  const displayName = profile.contributor_id || `Contributor #${id.slice(0, 4)}`
+  const memberYear = profile.created_at ? new Date(profile.created_at).getFullYear() : '2024'
 
   return (
     <div className="container py-12 max-w-5xl">
@@ -107,7 +112,7 @@ export default async function ExpertProfilePage({
               </span>
             </div>
             <p className="text-gray-300 text-sm max-w-md font-medium text-shadow-sm flex items-center gap-3">
-              <span>Member since 2024</span>
+              <span>Member since {memberYear}</span>
               <span className="w-1 h-1 bg-gray-500 rounded-full"></span>
               <span className="text-white font-bold">{followerCount} Followers</span>
             </p>
