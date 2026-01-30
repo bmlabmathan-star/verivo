@@ -32,23 +32,22 @@ export default function ExpertsPage() {
   useEffect(() => {
     const fetchExperts = async () => {
       try {
-        console.log("Fetching experts...")
+        setLoading(true)
 
-        // 1. Get current user
+        // 1. Get current user (optional)
         const {
           data: { user },
         } = await supabase.auth.getUser()
-
         setCurrentUserId(user?.id ?? null)
 
-        // 2. Fetch profiles with predictions (inner join)
+        // 2. Fetch experts using RPC-style aggregation
         const { data, error } = await supabase
           .from("profiles")
           .select(`
           id,
           username,
           avatar_url,
-          predictions!inner(id)
+          predictions(count)
         `)
 
         if (error) {
@@ -56,30 +55,25 @@ export default function ExpertsPage() {
           return
         }
 
-        console.log("Raw data:", data)
-
-        // 3. Normalize data → ADD prediction_count
-        const experts =
-          data?.map((p) => ({
+        // 3. Normalize + compute prediction_count
+        const expertsWithCount =
+          data?.map((p: any) => ({
             id: p.id,
             username: p.username,
             avatar_url: p.avatar_url,
-            prediction_count: p.predictions?.length ?? 0,
+            prediction_count: p.predictions?.[0]?.count ?? 0,
           })) ?? []
 
-        // 4. Safety filter (extra protection)
-        const filteredExperts = experts.filter(
-          (e) => e.prediction_count > 0
-        )
+        // 4. Strict filter (matches SQL HAVING clause)
+        const filtered = expertsWithCount
+          .filter((e) => e.prediction_count > 0)
+          .sort((a, b) => b.prediction_count - a.prediction_count)
 
-        // Sort by prediction count descending
-        filteredExperts.sort((a, b) => b.prediction_count - a.prediction_count)
+        console.log("FINAL EXPERTS:", filtered)
 
-        console.log("Final experts:", filteredExperts)
+        setExperts(filtered)
 
-        setExperts(filteredExperts)
-
-        // 5. Fetch Follows if user exists
+        // 5. Fetch follows (only if logged in)
         if (user) {
           const { data: followData } = await supabase
             .from("follows")
@@ -99,6 +93,7 @@ export default function ExpertsPage() {
 
     fetchExperts()
   }, [])
+
 
 
   // Loading State
