@@ -43,20 +43,20 @@ export default function ExpertsPage() {
         setCurrentUserId(user?.id ?? null)
 
         // 2. Fetch all experts (Relaxed for visibility)
-        // Trying 'experts' table as 'profiles' might be restricted or empty
-        // Selecting minimal fields to ensure no column errors. UI handles missing avatar.
+        // Using 'profiles' as it contains all registered users
         const { data, error } = await supabase
-          .from("experts")
+          .from("profiles")
           .select(
             `
           id,
           username,
+          avatar_url,
           predictions(id)
         `
           )
 
         if (error) {
-          console.error("Supabase error (experts):", error)
+          console.error("Supabase error (profiles):", error)
           setExperts([])
           return
         }
