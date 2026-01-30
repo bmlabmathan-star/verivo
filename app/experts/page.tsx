@@ -30,45 +30,52 @@ export default function ExpertsPage() {
   const [followedIds, setFollowedIds] = useState<string[]>([])
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchExperts = async () => {
       try {
         console.log("Fetching experts...")
 
-        // 1. Get current user
-        const { data: { user } } = await supabase.auth.getUser()
-        setCurrentUserId(user?.id || null)
+        // 1. Get logged-in user
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
 
-        // 2. Fetch Profiles with Predictions strict inner join
+        setCurrentUserId(user?.id ?? null)
+
+        // 2. Fetch profiles WITH predictions (INNER JOIN)
         const { data, error } = await supabase
           .from("profiles")
           .select(`
-            id,
-            username,
-            avatar_url,
-            predictions!inner(id)
-          `)
+          id,
+          username,
+          avatar_url,
+          predictions!inner(id)
+        `)
 
         if (error) {
-          console.error("Error fetching experts:", error)
-        } else {
-          console.log("Raw Supabase response:", data)
+          console.error("Supabase error:", error)
+          return
         }
 
-        // 3. Process Data
-        const expertsList = (data || [])
-          .map((expert: any) => ({
-            ...expert,
-            prediction_count: expert.predictions?.length || 0,
-            // Fallback for name if needed, though strictly we used username
-            name: expert.username || "Contributor"
-          }))
-          .filter((e: any) => e.prediction_count > 0)
-          .sort((a: any, b: any) => b.prediction_count - a.prediction_count)
+        console.log("Raw profiles data:", data)
 
-        console.log("Processed experts list:", expertsList)
-        setExperts(expertsList)
+        // 3. Transform data → experts list
+        const experts =
+          data?.map((profile: any) => ({
+            id: profile.id,
+            username: profile.username,
+            avatar_url: profile.avatar_url,
+            prediction_count: profile.predictions?.length || 0,
+          })) ?? []
 
-        // 4. Fetch Follows if user exists
+        // Sort by prediction count descending
+        experts.sort((a, b) => b.prediction_count - a.prediction_count)
+
+        console.log("Processed experts:", experts)
+
+        // 4. Set experts state
+        setExperts(experts)
+
+        // 5. Fetch Follows if user exists
         if (user) {
           const { data: followData } = await supabase
             .from("follows")
@@ -81,14 +88,13 @@ export default function ExpertsPage() {
         }
 
       } catch (err) {
-        console.error("Unexpected error in fetchData:", err)
+        console.error("Unexpected error:", err)
       } finally {
         setLoading(false)
-        console.log("Loading set to false")
       }
     }
 
-    fetchData()
+    fetchExperts()
   }, [])
 
   // Loading State
