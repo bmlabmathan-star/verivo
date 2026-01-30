@@ -155,3 +155,50 @@ export async function getExpertPerformance(expertId: string) {
 
     return { byAsset, byTimeframe, scoreHistory, confidenceFactor, predictions }
 }
+
+export async function getBatchContributorIds(userIds: string[]): Promise<Record<string, string>> {
+    if (userIds.length === 0) return {}
+
+    const supabase = await createClient()
+    const uniqueIds = Array.from(new Set(userIds))
+
+    // Fetch created_at for all requested users
+    const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, created_at")
+        .in("id", uniqueIds)
+
+    const idMap: Record<string, string> = {}
+
+    if (!profiles) return idMap
+
+    // For each user, calculate the ID
+    // Note: In a high-scale prod scenario, we would materialize this ID in the DB.
+    // For now, parallel execution of counts is acceptable.
+
+    await Promise.all(profiles.map(async (profile) => {
+        if (!profile.created_at) {
+            idMap[profile.id] = `Contributor #${profile.id.slice(0, 4)}`
+            return
+        }
+
+        const date = new Date(profile.created_at)
+        const dd = String(date.getDate()).padStart(2, '0')
+        const mm = String(date.getMonth() + 1).padStart(2, '0')
+        const yy = String(date.getFullYear()).slice(-2)
+
+        const startOfDay = new Date(date)
+        startOfDay.setHours(0, 0, 0, 0)
+
+        const { count } = await supabase
+            .from("profiles")
+            .select("*", { count: 'exact', head: true })
+            .gte('created_at', startOfDay.toISOString())
+            .lt('created_at', profile.created_at)
+
+        const sequence = String((count || 0) + 1).padStart(4, '0')
+        idMap[profile.id] = `${dd}${mm}${yy}${sequence}`
+    }))
+
+    return idMap
+}

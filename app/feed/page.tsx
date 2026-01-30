@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { getVerifiedFeed, getTopPerformers } from "@/lib/actions/feed"
 import { getFollowedUserIds } from "@/lib/actions/follow"
+import { getBatchContributorIds } from "@/lib/actions/profile"
 import { FollowButton } from "@/components/follow-button"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent } from "@/components/ui/card"
@@ -24,7 +25,15 @@ export default async function FeedPage({
   const topPerformers = await getTopPerformers()
   const followedIds = await getFollowedUserIds()
 
-  const formatUser = (id: string) => `User #${id.slice(0, 4)}`
+  // Collect User IDs to fetch streamlined IDs
+  const allUserIds = [
+    ...feedItems.map((i: any) => i.user_id),
+    ...topPerformers.map((u: any) => u.user_id)
+  ]
+
+  const contributorIds = await getBatchContributorIds(allUserIds)
+
+  const formatUser = (id: string) => contributorIds[id] || `User #${id.slice(0, 4)}`
 
   // ... (date formatting remains same)
   const formatDate = (dateStr: string) => {
