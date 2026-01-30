@@ -34,14 +34,14 @@ export default function ExpertsPage() {
       try {
         console.log("Fetching experts...")
 
-        // 1. Get logged-in user
+        // 1. Get current user
         const {
           data: { user },
         } = await supabase.auth.getUser()
 
         setCurrentUserId(user?.id ?? null)
 
-        // 2. Fetch profiles WITH predictions (INNER JOIN)
+        // 2. Fetch profiles with predictions (inner join)
         const { data, error } = await supabase
           .from("profiles")
           .select(`
@@ -56,24 +56,28 @@ export default function ExpertsPage() {
           return
         }
 
-        console.log("Raw profiles data:", data)
+        console.log("Raw data:", data)
 
-        // 3. Transform data → experts list
+        // 3. Normalize data → ADD prediction_count
         const experts =
-          data?.map((profile: any) => ({
-            id: profile.id,
-            username: profile.username,
-            avatar_url: profile.avatar_url,
-            prediction_count: profile.predictions?.length || 0,
+          data?.map((p) => ({
+            id: p.id,
+            username: p.username,
+            avatar_url: p.avatar_url,
+            prediction_count: p.predictions?.length ?? 0,
           })) ?? []
 
+        // 4. Safety filter (extra protection)
+        const filteredExperts = experts.filter(
+          (e) => e.prediction_count > 0
+        )
+
         // Sort by prediction count descending
-        experts.sort((a, b) => b.prediction_count - a.prediction_count)
+        filteredExperts.sort((a, b) => b.prediction_count - a.prediction_count)
 
-        console.log("Processed experts:", experts)
+        console.log("Final experts:", filteredExperts)
 
-        // 4. Set experts state
-        setExperts(experts)
+        setExperts(filteredExperts)
 
         // 5. Fetch Follows if user exists
         if (user) {
@@ -86,7 +90,6 @@ export default function ExpertsPage() {
             setFollowedIds(followData.map((f: any) => f.following_id))
           }
         }
-
       } catch (err) {
         console.error("Unexpected error:", err)
       } finally {
@@ -96,6 +99,7 @@ export default function ExpertsPage() {
 
     fetchExperts()
   }, [])
+
 
   // Loading State
   if (loading) {
