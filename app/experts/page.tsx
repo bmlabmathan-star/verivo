@@ -43,10 +43,17 @@ export default function ExpertsPage() {
         setCurrentUserId(user?.id ?? null)
 
         // 2. Fetch all experts (Relaxed for visibility)
-        // DEBUG: Removing predictions join to rule out RLS issues on predictions table
+        // Re-enabling predictions fetch (LEFT JOIN by default) to get accurate counts
         const { data, error } = await supabase
           .from("profiles")
-          .select("id, username, avatar_url")
+          .select(
+            `
+          id,
+          username,
+          avatar_url,
+          predictions(id)
+        `
+          )
 
         if (error) {
           console.error("Supabase error (profiles):", error)
@@ -139,9 +146,6 @@ export default function ExpertsPage() {
           <p className="text-gray-400 max-w-lg mx-auto mb-6">
             Expertise on Verivo is earned, not given. Be the first to start building a verified track record, or invite others to contribute.
           </p>
-          <p className="text-xs text-red-400 mb-6 font-mono bg-red-900/20 py-2 px-4 rounded border border-red-900/50 inline-block">
-            Debug: If you have users, check "profiles" table RLS policies in Supabase.
-          </p>
           <Link href="/predictions/create">
             <Button className="bg-purple-600 hover:bg-purple-500 text-white">
               Start Contributing
@@ -214,7 +218,8 @@ export default function ExpertsPage() {
             )
           })}
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   )
 }
