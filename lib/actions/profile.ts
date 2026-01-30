@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 // Helper function for weights
 function getWeight(minutes: number): number {
@@ -13,6 +14,8 @@ function getWeight(minutes: number): number {
 
 export interface ExpertProfileData {
     id: string
+    created_at?: string
+    contributor_id?: string
     // Add other profile fields if 'verivo_users' table has them
     stats: {
         total_predictions: number
@@ -24,8 +27,63 @@ export interface ExpertProfileData {
 
 export async function getExpertProfile(expertId: string): Promise<ExpertProfileData | null> {
     const supabase = await createClient()
+    const adminSupabase = createAdminClient()
 
-    // Try to fetch from 'user_verivo_scores' view which aggregates stats
+    // Use admin client if available to bypass RLS for profile lookup, otherwise fallback
+    const dataClient = adminSupabase || supabase
+
+    // 1. Fetch Profile Data (created_at)
+    // We need this to generate the Streamlined ID
+    const { data: profile, error: profileError } = await dataClient
+        .from("profiles")
+        .select("id, created_at") // Explicitly fetching id too
+        .eq("id", expertId)
+        .single()
+
+    if (profileError && profileError.code !== 'PGRST116') { // PGRST116 means no rows found, which is fine for a new user
+        console.error("Error fetching expert profile:", profileError)
+        // We can still proceed to fetch stats, but contributor_id will be fallback
+    }
+
+    // 2. Generate Streamlined ID: DDMMYYnnnn
+    let contributor_id = `Contributor #${expertId.slice(0, 4)}` // Fallback
+
+    if (profile?.created_at) {
+        const date = new Date(profile.created_at)
+        const dd = String(date.getDate()).padStart(2, '0')
+        const mm = String(date.getMonth() + 1).padStart(2, '0')
+        const yy = String(date.getFullYear()).slice(-2)
+
+        // Define day boundaries for counting
+        const startOfDay = new Date(date)
+        startOfDay.setHours(0, 0, 0, 0)
+
+        const endOfDay = new Date(date)
+        endOfDay.setHours(23, 59, 59, 999)
+
+        // Determinstic Rank: Fetch all users from that day, sort by Time + ID
+        // MUST use dataClient here too to ensure we can see all users for ranking
+        const { data: dayUsers } = await dataClient
+            .from("profiles")
+            .select("id")
+            .gte('created_at', startOfDay.toISOString())
+            .lte('created_at', endOfDay.toISOString())
+            .order('created_at', { ascending: true })
+            .order('id', { ascending: true }) // Tie-breaker
+
+        let sequence = 1
+        if (dayUsers) {
+            const index = dayUsers.findIndex(u => u.id === expertId)
+            if (index !== -1) {
+                sequence = index + 1
+            }
+        }
+
+        const sequenceStr = String(sequence).padStart(4, '0')
+        contributor_id = `${dd}${mm}${yy}${sequenceStr}`
+    }
+
+    // 3. Try to fetch from 'user_verivo_scores' view which aggregates stats
     const { data: stats, error } = await supabase
         .from("user_verivo_scores")
         .select("*")
@@ -37,6 +95,8 @@ export async function getExpertProfile(expertId: string): Promise<ExpertProfileD
         if (error.code === 'PGRST116') { // No rows found
             return {
                 id: expertId,
+                created_at: profile?.created_at,
+                contributor_id: contributor_id,
                 stats: {
                     total_predictions: 0,
                     correct_predictions: 0,
@@ -51,6 +111,8 @@ export async function getExpertProfile(expertId: string): Promise<ExpertProfileD
 
     return {
         id: expertId,
+        created_at: profile?.created_at,
+        contributor_id: contributor_id,
         stats: stats ? {
             total_predictions: stats.total_predictions,
             correct_predictions: stats.correct_predictions,
@@ -160,10 +222,13 @@ export async function getBatchContributorIds(userIds: string[]): Promise<Record<
     if (userIds.length === 0) return {}
 
     const supabase = await createClient()
+    const adminSupabase = createAdminClient()
+    const dataClient = adminSupabase || supabase
+
     const uniqueIds = Array.from(new Set(userIds))
 
     // Fetch created_at for all requested users
-    const { data: profiles } = await supabase
+    const { data: profiles } = await dataClient
         .from("profiles")
         .select("id, created_at")
         .in("id", uniqueIds)
@@ -195,7 +260,7 @@ export async function getBatchContributorIds(userIds: string[]): Promise<Record<
 
         // Fetch ALL users registered on this day to determine rank deterministically
         // Ordering by created_at (asc) and ID (asc) ensures stable sort even for collisions
-        const { data: dayUsers } = await supabase
+        const { data: dayUsers } = await dataClient
             .from("profiles")
             .select("id")
             .gte('created_at', startOfDay.toISOString())
