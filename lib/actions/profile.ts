@@ -190,14 +190,29 @@ export async function getBatchContributorIds(userIds: string[]): Promise<Record<
         const startOfDay = new Date(date)
         startOfDay.setHours(0, 0, 0, 0)
 
-        const { count } = await supabase
-            .from("profiles")
-            .select("*", { count: 'exact', head: true })
-            .gte('created_at', startOfDay.toISOString())
-            .lt('created_at', profile.created_at)
+        const endOfDay = new Date(date)
+        endOfDay.setHours(23, 59, 59, 999)
 
-        const sequence = String((count || 0) + 1).padStart(4, '0')
-        idMap[profile.id] = `${dd}${mm}${yy}${sequence}`
+        // Fetch ALL users registered on this day to determine rank deterministically
+        // Ordering by created_at (asc) and ID (asc) ensures stable sort even for collisions
+        const { data: dayUsers } = await supabase
+            .from("profiles")
+            .select("id")
+            .gte('created_at', startOfDay.toISOString())
+            .lte('created_at', endOfDay.toISOString())
+            .order('created_at', { ascending: true })
+            .order('id', { ascending: true }) // Tie-breaker
+
+        let sequence = 1
+        if (dayUsers) {
+            const index = dayUsers.findIndex(u => u.id === profile.id)
+            if (index !== -1) {
+                sequence = index + 1
+            }
+        }
+
+        const sequenceStr = String(sequence).padStart(4, '0')
+        idMap[profile.id] = `${dd}${mm}${yy}${sequenceStr}`
     }))
 
     return idMap
